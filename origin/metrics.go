@@ -58,9 +58,11 @@ type TunnelMetrics struct {
 	// oldServerLocations stores the last server the tunnel was connected to
 	oldServerLocations map[string]string
 
-	regSuccess prometheus.Counter
-	regFail    *prometheus.CounterVec
-	rpcFail    *prometheus.CounterVec
+	regSuccess  *prometheus.CounterVec
+	regFail     *prometheus.CounterVec
+	authSuccess prometheus.Counter
+	authFail    *prometheus.CounterVec
+	rpcFail     *prometheus.CounterVec
 
 	muxerMetrics        *muxerMetrics
 	tunnelsHA           tunnelsForHA
@@ -417,7 +419,7 @@ func NewTunnelMetrics() *TunnelMetrics {
 			Name:      "tunnel_rpc_fail",
 			Help:      "Count of RPC connection errors by type",
 		},
-		[]string{"error"},
+		[]string{"error", "rpcName"},
 	)
 	prometheus.MustRegister(rpcFail)
 
@@ -428,7 +430,7 @@ func NewTunnelMetrics() *TunnelMetrics {
 			Name:      "tunnel_register_fail",
 			Help:      "Count of tunnel registration errors by type",
 		},
-		[]string{"error"},
+		[]string{"error", "rpcName"},
 	)
 	prometheus.MustRegister(registerFail)
 
@@ -443,14 +445,37 @@ func NewTunnelMetrics() *TunnelMetrics {
 	)
 	prometheus.MustRegister(userHostnamesCounts)
 
-	registerSuccess := prometheus.NewCounter(
+	registerSuccess := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: metricsNamespace,
 			Subsystem: tunnelSubsystem,
 			Name:      "tunnel_register_success",
 			Help:      "Count of successful tunnel registrations",
-		})
+		},
+		[]string{"rpcName"},
+	)
 	prometheus.MustRegister(registerSuccess)
+
+	authSuccess := prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Namespace: metricsNamespace,
+			Subsystem: tunnelSubsystem,
+			Name:      "tunnel_authenticate_success",
+			Help:      "Count of successful tunnel authenticate",
+		},
+	)
+	prometheus.MustRegister(authSuccess)
+
+	authFail := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: metricsNamespace,
+			Subsystem: tunnelSubsystem,
+			Name:      "tunnel_authenticate_fail",
+			Help:      "Count of tunnel authenticate errors by type",
+		},
+		[]string{"error"},
+	)
+	prometheus.MustRegister(authFail)
 
 	return &TunnelMetrics{
 		haConnections:                  haConnections,
@@ -472,6 +497,8 @@ func NewTunnelMetrics() *TunnelMetrics {
 		regFail:                        registerFail,
 		rpcFail:                        rpcFail,
 		userHostnamesCounts:            userHostnamesCounts,
+		authSuccess:                    authSuccess,
+		authFail:                       authFail,
 	}
 }
 

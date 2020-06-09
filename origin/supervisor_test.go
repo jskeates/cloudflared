@@ -8,15 +8,39 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/cloudflare/cloudflared/logger"
 	tunnelpogs "github.com/cloudflare/cloudflared/tunnelrpc/pogs"
 )
 
+func testConfig(logger logger.Service) *TunnelConfig {
+	metrics := TunnelMetrics{}
+
+	metrics.authSuccess = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Namespace: metricsNamespace,
+			Subsystem: tunnelSubsystem,
+			Name:      "tunnel_authenticate_success",
+			Help:      "Count of successful tunnel authenticate",
+		},
+	)
+
+	metrics.authFail = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: metricsNamespace,
+			Subsystem: tunnelSubsystem,
+			Name:      "tunnel_authenticate_fail",
+			Help:      "Count of tunnel authenticate errors by type",
+		},
+		[]string{"error"},
+	)
+	return &TunnelConfig{Logger: logger, Metrics: &metrics}
+}
+
 func TestRefreshAuthBackoff(t *testing.T) {
-	logger := logrus.New()
-	logger.Level = logrus.ErrorLevel
+	logger := logger.NewOutputWriter(logger.NewMockWriteManager())
 
 	var wait time.Duration
 	timeAfter = func(d time.Duration) <-chan time.Time {
@@ -24,7 +48,10 @@ func TestRefreshAuthBackoff(t *testing.T) {
 		return time.After(d)
 	}
 
-	s := NewSupervisor(&TunnelConfig{Logger: logger}, uuid.New())
+	s, err := NewSupervisor(testConfig(logger), uuid.New())
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
 	backoff := &BackoffHandler{MaxRetries: 3}
 	auth := func(ctx context.Context, n int) (tunnelpogs.AuthOutcome, error) {
 		return nil, fmt.Errorf("authentication failure")
@@ -57,8 +84,7 @@ func TestRefreshAuthBackoff(t *testing.T) {
 }
 
 func TestRefreshAuthSuccess(t *testing.T) {
-	logger := logrus.New()
-	logger.Level = logrus.ErrorLevel
+	logger := logger.NewOutputWriter(logger.NewMockWriteManager())
 
 	var wait time.Duration
 	timeAfter = func(d time.Duration) <-chan time.Time {
@@ -66,7 +92,10 @@ func TestRefreshAuthSuccess(t *testing.T) {
 		return time.After(d)
 	}
 
-	s := NewSupervisor(&TunnelConfig{Logger: logger}, uuid.New())
+	s, err := NewSupervisor(testConfig(logger), uuid.New())
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
 	backoff := &BackoffHandler{MaxRetries: 3}
 	auth := func(ctx context.Context, n int) (tunnelpogs.AuthOutcome, error) {
 		return tunnelpogs.NewAuthSuccess([]byte("jwt"), 19), nil
@@ -83,8 +112,7 @@ func TestRefreshAuthSuccess(t *testing.T) {
 }
 
 func TestRefreshAuthUnknown(t *testing.T) {
-	logger := logrus.New()
-	logger.Level = logrus.ErrorLevel
+	logger := logger.NewOutputWriter(logger.NewMockWriteManager())
 
 	var wait time.Duration
 	timeAfter = func(d time.Duration) <-chan time.Time {
@@ -92,7 +120,10 @@ func TestRefreshAuthUnknown(t *testing.T) {
 		return time.After(d)
 	}
 
-	s := NewSupervisor(&TunnelConfig{Logger: logger}, uuid.New())
+	s, err := NewSupervisor(testConfig(logger), uuid.New())
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
 	backoff := &BackoffHandler{MaxRetries: 3}
 	auth := func(ctx context.Context, n int) (tunnelpogs.AuthOutcome, error) {
 		return tunnelpogs.NewAuthUnknown(errors.New("auth unknown"), 19), nil
@@ -109,10 +140,12 @@ func TestRefreshAuthUnknown(t *testing.T) {
 }
 
 func TestRefreshAuthFail(t *testing.T) {
-	logger := logrus.New()
-	logger.Level = logrus.ErrorLevel
+	logger := logger.NewOutputWriter(logger.NewMockWriteManager())
 
-	s := NewSupervisor(&TunnelConfig{Logger: logger}, uuid.New())
+	s, err := NewSupervisor(testConfig(logger), uuid.New())
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
 	backoff := &BackoffHandler{MaxRetries: 3}
 	auth := func(ctx context.Context, n int) (tunnelpogs.AuthOutcome, error) {
 		return tunnelpogs.NewAuthFail(errors.New("auth fail")), nil

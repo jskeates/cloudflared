@@ -16,6 +16,10 @@ func (i TunnelServer_PogsImpl) ReconnectTunnel(p tunnelrpc.TunnelServer_reconnec
 	if err != nil {
 		return err
 	}
+	connDigest, err := p.Params.ConnDigest()
+	if err != nil {
+		return err
+	}
 	hostname, err := p.Params.Hostname()
 	if err != nil {
 		return err
@@ -29,7 +33,7 @@ func (i TunnelServer_PogsImpl) ReconnectTunnel(p tunnelrpc.TunnelServer_reconnec
 		return err
 	}
 	server.Ack(p.Options)
-	registration, err := i.impl.ReconnectTunnel(p.Ctx, jwt, eventDigest, hostname, pogsOptions)
+	registration, err := i.impl.ReconnectTunnel(p.Ctx, jwt, eventDigest, connDigest, hostname, pogsOptions)
 	if err != nil {
 		return err
 	}
@@ -44,9 +48,10 @@ func (c TunnelServer_PogsClient) ReconnectTunnel(
 	ctx context.Context,
 	jwt,
 	eventDigest []byte,
+	connDigest []byte,
 	hostname string,
 	options *RegistrationOptions,
-) (*TunnelRegistration, error) {
+) *TunnelRegistration {
 	client := tunnelrpc.TunnelServer{Client: c.Client}
 	promise := client.ReconnectTunnel(ctx, func(p tunnelrpc.TunnelServer_reconnectTunnel_Params) error {
 		err := p.SetJwt(jwt)
@@ -54,6 +59,10 @@ func (c TunnelServer_PogsClient) ReconnectTunnel(
 			return err
 		}
 		err = p.SetEventDigest(eventDigest)
+		if err != nil {
+			return err
+		}
+		err = p.SetConnDigest(connDigest)
 		if err != nil {
 			return err
 		}
@@ -73,7 +82,11 @@ func (c TunnelServer_PogsClient) ReconnectTunnel(
 	})
 	retval, err := promise.Result().Struct()
 	if err != nil {
-		return nil, err
+		return NewRetryableRegistrationError(err, defaultRetryAfterSeconds).Serialize()
 	}
-	return UnmarshalTunnelRegistration(retval)
+	registration, err := UnmarshalTunnelRegistration(retval)
+	if err != nil {
+		return NewRetryableRegistrationError(err, defaultRetryAfterSeconds).Serialize()
+	}
+	return registration
 }

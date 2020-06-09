@@ -4,7 +4,6 @@ package tunnelrpc
 
 import (
 	context "golang.org/x/net/context"
-	strconv "strconv"
 	capnp "zombiezen.com/go/capnproto2"
 	text "zombiezen.com/go/capnproto2/encoding/text"
 	schemas "zombiezen.com/go/capnproto2/schemas"
@@ -125,12 +124,12 @@ type TunnelRegistration struct{ capnp.Struct }
 const TunnelRegistration_TypeID = 0xf41a0f001ad49e46
 
 func NewTunnelRegistration(s *capnp.Segment) (TunnelRegistration, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 5})
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 6})
 	return TunnelRegistration{st}, err
 }
 
 func NewRootTunnelRegistration(s *capnp.Segment) (TunnelRegistration, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 5})
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 6})
 	return TunnelRegistration{st}, err
 }
 
@@ -256,12 +255,26 @@ func (s TunnelRegistration) SetEventDigest(v []byte) error {
 	return s.Struct.SetData(4, v)
 }
 
+func (s TunnelRegistration) ConnDigest() ([]byte, error) {
+	p, err := s.Struct.Ptr(5)
+	return []byte(p.Data()), err
+}
+
+func (s TunnelRegistration) HasConnDigest() bool {
+	p, err := s.Struct.Ptr(5)
+	return p.IsValid() || err != nil
+}
+
+func (s TunnelRegistration) SetConnDigest(v []byte) error {
+	return s.Struct.SetData(5, v)
+}
+
 // TunnelRegistration_List is a list of TunnelRegistration.
 type TunnelRegistration_List struct{ capnp.List }
 
 // NewTunnelRegistration creates a new list of TunnelRegistration.
 func NewTunnelRegistration_List(s *capnp.Segment, sz int32) (TunnelRegistration_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 5}, sz)
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 6}, sz)
 	return TunnelRegistration_List{l}, err
 }
 
@@ -292,12 +305,12 @@ type RegistrationOptions struct{ capnp.Struct }
 const RegistrationOptions_TypeID = 0xc793e50592935b4a
 
 func NewRegistrationOptions(s *capnp.Segment) (RegistrationOptions, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 7})
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 8})
 	return RegistrationOptions{st}, err
 }
 
 func NewRootRegistrationOptions(s *capnp.Segment) (RegistrationOptions, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 7})
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 8})
 	return RegistrationOptions{st}, err
 }
 
@@ -498,12 +511,37 @@ func (s RegistrationOptions) SetNumPreviousAttempts(v uint8) {
 	s.Struct.SetUint8(4, v)
 }
 
+func (s RegistrationOptions) Features() (capnp.TextList, error) {
+	p, err := s.Struct.Ptr(7)
+	return capnp.TextList{List: p.List()}, err
+}
+
+func (s RegistrationOptions) HasFeatures() bool {
+	p, err := s.Struct.Ptr(7)
+	return p.IsValid() || err != nil
+}
+
+func (s RegistrationOptions) SetFeatures(v capnp.TextList) error {
+	return s.Struct.SetPtr(7, v.List.ToPtr())
+}
+
+// NewFeatures sets the features field to a newly
+// allocated capnp.TextList, preferring placement in s's segment.
+func (s RegistrationOptions) NewFeatures(n int32) (capnp.TextList, error) {
+	l, err := capnp.NewTextList(s.Struct.Segment(), n)
+	if err != nil {
+		return capnp.TextList{}, err
+	}
+	err = s.Struct.SetPtr(7, l.List.ToPtr())
+	return l, err
+}
+
 // RegistrationOptions_List is a list of RegistrationOptions.
 type RegistrationOptions_List struct{ capnp.List }
 
 // NewRegistrationOptions creates a new list of RegistrationOptions.
 func NewRegistrationOptions_List(s *capnp.Segment, sz int32) (RegistrationOptions_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 16, PointerCount: 7}, sz)
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 16, PointerCount: 8}, sz)
 	return RegistrationOptions_List{l}, err
 }
 
@@ -526,1566 +564,6 @@ type RegistrationOptions_Promise struct{ *capnp.Pipeline }
 func (p RegistrationOptions_Promise) Struct() (RegistrationOptions, error) {
 	s, err := p.Pipeline.Struct()
 	return RegistrationOptions{s}, err
-}
-
-type CapnpConnectParameters struct{ capnp.Struct }
-
-// CapnpConnectParameters_TypeID is the unique identifier for the type CapnpConnectParameters.
-const CapnpConnectParameters_TypeID = 0xa78f37418c1077c8
-
-func NewCapnpConnectParameters(s *capnp.Segment) (CapnpConnectParameters, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 5})
-	return CapnpConnectParameters{st}, err
-}
-
-func NewRootCapnpConnectParameters(s *capnp.Segment) (CapnpConnectParameters, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 5})
-	return CapnpConnectParameters{st}, err
-}
-
-func ReadRootCapnpConnectParameters(msg *capnp.Message) (CapnpConnectParameters, error) {
-	root, err := msg.RootPtr()
-	return CapnpConnectParameters{root.Struct()}, err
-}
-
-func (s CapnpConnectParameters) String() string {
-	str, _ := text.Marshal(0xa78f37418c1077c8, s.Struct)
-	return str
-}
-
-func (s CapnpConnectParameters) OriginCert() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	return []byte(p.Data()), err
-}
-
-func (s CapnpConnectParameters) HasOriginCert() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s CapnpConnectParameters) SetOriginCert(v []byte) error {
-	return s.Struct.SetData(0, v)
-}
-
-func (s CapnpConnectParameters) CloudflaredID() ([]byte, error) {
-	p, err := s.Struct.Ptr(1)
-	return []byte(p.Data()), err
-}
-
-func (s CapnpConnectParameters) HasCloudflaredID() bool {
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s CapnpConnectParameters) SetCloudflaredID(v []byte) error {
-	return s.Struct.SetData(1, v)
-}
-
-func (s CapnpConnectParameters) NumPreviousAttempts() uint8 {
-	return s.Struct.Uint8(0)
-}
-
-func (s CapnpConnectParameters) SetNumPreviousAttempts(v uint8) {
-	s.Struct.SetUint8(0, v)
-}
-
-func (s CapnpConnectParameters) Tags() (Tag_List, error) {
-	p, err := s.Struct.Ptr(2)
-	return Tag_List{List: p.List()}, err
-}
-
-func (s CapnpConnectParameters) HasTags() bool {
-	p, err := s.Struct.Ptr(2)
-	return p.IsValid() || err != nil
-}
-
-func (s CapnpConnectParameters) SetTags(v Tag_List) error {
-	return s.Struct.SetPtr(2, v.List.ToPtr())
-}
-
-// NewTags sets the tags field to a newly
-// allocated Tag_List, preferring placement in s's segment.
-func (s CapnpConnectParameters) NewTags(n int32) (Tag_List, error) {
-	l, err := NewTag_List(s.Struct.Segment(), n)
-	if err != nil {
-		return Tag_List{}, err
-	}
-	err = s.Struct.SetPtr(2, l.List.ToPtr())
-	return l, err
-}
-
-func (s CapnpConnectParameters) CloudflaredVersion() (string, error) {
-	p, err := s.Struct.Ptr(3)
-	return p.Text(), err
-}
-
-func (s CapnpConnectParameters) HasCloudflaredVersion() bool {
-	p, err := s.Struct.Ptr(3)
-	return p.IsValid() || err != nil
-}
-
-func (s CapnpConnectParameters) CloudflaredVersionBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(3)
-	return p.TextBytes(), err
-}
-
-func (s CapnpConnectParameters) SetCloudflaredVersion(v string) error {
-	return s.Struct.SetText(3, v)
-}
-
-func (s CapnpConnectParameters) IntentLabel() (string, error) {
-	p, err := s.Struct.Ptr(4)
-	return p.Text(), err
-}
-
-func (s CapnpConnectParameters) HasIntentLabel() bool {
-	p, err := s.Struct.Ptr(4)
-	return p.IsValid() || err != nil
-}
-
-func (s CapnpConnectParameters) IntentLabelBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(4)
-	return p.TextBytes(), err
-}
-
-func (s CapnpConnectParameters) SetIntentLabel(v string) error {
-	return s.Struct.SetText(4, v)
-}
-
-// CapnpConnectParameters_List is a list of CapnpConnectParameters.
-type CapnpConnectParameters_List struct{ capnp.List }
-
-// NewCapnpConnectParameters creates a new list of CapnpConnectParameters.
-func NewCapnpConnectParameters_List(s *capnp.Segment, sz int32) (CapnpConnectParameters_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 5}, sz)
-	return CapnpConnectParameters_List{l}, err
-}
-
-func (s CapnpConnectParameters_List) At(i int) CapnpConnectParameters {
-	return CapnpConnectParameters{s.List.Struct(i)}
-}
-
-func (s CapnpConnectParameters_List) Set(i int, v CapnpConnectParameters) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s CapnpConnectParameters_List) String() string {
-	str, _ := text.MarshalList(0xa78f37418c1077c8, s.List)
-	return str
-}
-
-// CapnpConnectParameters_Promise is a wrapper for a CapnpConnectParameters promised by a client call.
-type CapnpConnectParameters_Promise struct{ *capnp.Pipeline }
-
-func (p CapnpConnectParameters_Promise) Struct() (CapnpConnectParameters, error) {
-	s, err := p.Pipeline.Struct()
-	return CapnpConnectParameters{s}, err
-}
-
-type ConnectResult struct{ capnp.Struct }
-type ConnectResult_result ConnectResult
-type ConnectResult_result_Which uint16
-
-const (
-	ConnectResult_result_Which_err     ConnectResult_result_Which = 0
-	ConnectResult_result_Which_success ConnectResult_result_Which = 1
-)
-
-func (w ConnectResult_result_Which) String() string {
-	const s = "errsuccess"
-	switch w {
-	case ConnectResult_result_Which_err:
-		return s[0:3]
-	case ConnectResult_result_Which_success:
-		return s[3:10]
-
-	}
-	return "ConnectResult_result_Which(" + strconv.FormatUint(uint64(w), 10) + ")"
-}
-
-// ConnectResult_TypeID is the unique identifier for the type ConnectResult.
-const ConnectResult_TypeID = 0xff8d9848747c956a
-
-func NewConnectResult(s *capnp.Segment) (ConnectResult, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
-	return ConnectResult{st}, err
-}
-
-func NewRootConnectResult(s *capnp.Segment) (ConnectResult, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
-	return ConnectResult{st}, err
-}
-
-func ReadRootConnectResult(msg *capnp.Message) (ConnectResult, error) {
-	root, err := msg.RootPtr()
-	return ConnectResult{root.Struct()}, err
-}
-
-func (s ConnectResult) String() string {
-	str, _ := text.Marshal(0xff8d9848747c956a, s.Struct)
-	return str
-}
-
-func (s ConnectResult) Result() ConnectResult_result { return ConnectResult_result(s) }
-
-func (s ConnectResult_result) Which() ConnectResult_result_Which {
-	return ConnectResult_result_Which(s.Struct.Uint16(0))
-}
-func (s ConnectResult_result) Err() (ConnectError, error) {
-	if s.Struct.Uint16(0) != 0 {
-		panic("Which() != err")
-	}
-	p, err := s.Struct.Ptr(0)
-	return ConnectError{Struct: p.Struct()}, err
-}
-
-func (s ConnectResult_result) HasErr() bool {
-	if s.Struct.Uint16(0) != 0 {
-		return false
-	}
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s ConnectResult_result) SetErr(v ConnectError) error {
-	s.Struct.SetUint16(0, 0)
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewErr sets the err field to a newly
-// allocated ConnectError struct, preferring placement in s's segment.
-func (s ConnectResult_result) NewErr() (ConnectError, error) {
-	s.Struct.SetUint16(0, 0)
-	ss, err := NewConnectError(s.Struct.Segment())
-	if err != nil {
-		return ConnectError{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s ConnectResult_result) Success() (ConnectSuccess, error) {
-	if s.Struct.Uint16(0) != 1 {
-		panic("Which() != success")
-	}
-	p, err := s.Struct.Ptr(0)
-	return ConnectSuccess{Struct: p.Struct()}, err
-}
-
-func (s ConnectResult_result) HasSuccess() bool {
-	if s.Struct.Uint16(0) != 1 {
-		return false
-	}
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s ConnectResult_result) SetSuccess(v ConnectSuccess) error {
-	s.Struct.SetUint16(0, 1)
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewSuccess sets the success field to a newly
-// allocated ConnectSuccess struct, preferring placement in s's segment.
-func (s ConnectResult_result) NewSuccess() (ConnectSuccess, error) {
-	s.Struct.SetUint16(0, 1)
-	ss, err := NewConnectSuccess(s.Struct.Segment())
-	if err != nil {
-		return ConnectSuccess{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-// ConnectResult_List is a list of ConnectResult.
-type ConnectResult_List struct{ capnp.List }
-
-// NewConnectResult creates a new list of ConnectResult.
-func NewConnectResult_List(s *capnp.Segment, sz int32) (ConnectResult_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1}, sz)
-	return ConnectResult_List{l}, err
-}
-
-func (s ConnectResult_List) At(i int) ConnectResult { return ConnectResult{s.List.Struct(i)} }
-
-func (s ConnectResult_List) Set(i int, v ConnectResult) error { return s.List.SetStruct(i, v.Struct) }
-
-func (s ConnectResult_List) String() string {
-	str, _ := text.MarshalList(0xff8d9848747c956a, s.List)
-	return str
-}
-
-// ConnectResult_Promise is a wrapper for a ConnectResult promised by a client call.
-type ConnectResult_Promise struct{ *capnp.Pipeline }
-
-func (p ConnectResult_Promise) Struct() (ConnectResult, error) {
-	s, err := p.Pipeline.Struct()
-	return ConnectResult{s}, err
-}
-
-func (p ConnectResult_Promise) Result() ConnectResult_result_Promise {
-	return ConnectResult_result_Promise{p.Pipeline}
-}
-
-// ConnectResult_result_Promise is a wrapper for a ConnectResult_result promised by a client call.
-type ConnectResult_result_Promise struct{ *capnp.Pipeline }
-
-func (p ConnectResult_result_Promise) Struct() (ConnectResult_result, error) {
-	s, err := p.Pipeline.Struct()
-	return ConnectResult_result{s}, err
-}
-
-func (p ConnectResult_result_Promise) Err() ConnectError_Promise {
-	return ConnectError_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
-func (p ConnectResult_result_Promise) Success() ConnectSuccess_Promise {
-	return ConnectSuccess_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
-type ConnectError struct{ capnp.Struct }
-
-// ConnectError_TypeID is the unique identifier for the type ConnectError.
-const ConnectError_TypeID = 0xb14ce48f4e2abb0d
-
-func NewConnectError(s *capnp.Segment) (ConnectError, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1})
-	return ConnectError{st}, err
-}
-
-func NewRootConnectError(s *capnp.Segment) (ConnectError, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1})
-	return ConnectError{st}, err
-}
-
-func ReadRootConnectError(msg *capnp.Message) (ConnectError, error) {
-	root, err := msg.RootPtr()
-	return ConnectError{root.Struct()}, err
-}
-
-func (s ConnectError) String() string {
-	str, _ := text.Marshal(0xb14ce48f4e2abb0d, s.Struct)
-	return str
-}
-
-func (s ConnectError) Cause() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.Text(), err
-}
-
-func (s ConnectError) HasCause() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s ConnectError) CauseBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.TextBytes(), err
-}
-
-func (s ConnectError) SetCause(v string) error {
-	return s.Struct.SetText(0, v)
-}
-
-func (s ConnectError) RetryAfter() int64 {
-	return int64(s.Struct.Uint64(0))
-}
-
-func (s ConnectError) SetRetryAfter(v int64) {
-	s.Struct.SetUint64(0, uint64(v))
-}
-
-func (s ConnectError) ShouldRetry() bool {
-	return s.Struct.Bit(64)
-}
-
-func (s ConnectError) SetShouldRetry(v bool) {
-	s.Struct.SetBit(64, v)
-}
-
-// ConnectError_List is a list of ConnectError.
-type ConnectError_List struct{ capnp.List }
-
-// NewConnectError creates a new list of ConnectError.
-func NewConnectError_List(s *capnp.Segment, sz int32) (ConnectError_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1}, sz)
-	return ConnectError_List{l}, err
-}
-
-func (s ConnectError_List) At(i int) ConnectError { return ConnectError{s.List.Struct(i)} }
-
-func (s ConnectError_List) Set(i int, v ConnectError) error { return s.List.SetStruct(i, v.Struct) }
-
-func (s ConnectError_List) String() string {
-	str, _ := text.MarshalList(0xb14ce48f4e2abb0d, s.List)
-	return str
-}
-
-// ConnectError_Promise is a wrapper for a ConnectError promised by a client call.
-type ConnectError_Promise struct{ *capnp.Pipeline }
-
-func (p ConnectError_Promise) Struct() (ConnectError, error) {
-	s, err := p.Pipeline.Struct()
-	return ConnectError{s}, err
-}
-
-type ConnectSuccess struct{ capnp.Struct }
-
-// ConnectSuccess_TypeID is the unique identifier for the type ConnectSuccess.
-const ConnectSuccess_TypeID = 0x8407e070e0d52605
-
-func NewConnectSuccess(s *capnp.Segment) (ConnectSuccess, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 2})
-	return ConnectSuccess{st}, err
-}
-
-func NewRootConnectSuccess(s *capnp.Segment) (ConnectSuccess, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 2})
-	return ConnectSuccess{st}, err
-}
-
-func ReadRootConnectSuccess(msg *capnp.Message) (ConnectSuccess, error) {
-	root, err := msg.RootPtr()
-	return ConnectSuccess{root.Struct()}, err
-}
-
-func (s ConnectSuccess) String() string {
-	str, _ := text.Marshal(0x8407e070e0d52605, s.Struct)
-	return str
-}
-
-func (s ConnectSuccess) ServerLocationName() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.Text(), err
-}
-
-func (s ConnectSuccess) HasServerLocationName() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s ConnectSuccess) ServerLocationNameBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.TextBytes(), err
-}
-
-func (s ConnectSuccess) SetServerLocationName(v string) error {
-	return s.Struct.SetText(0, v)
-}
-
-func (s ConnectSuccess) ClientConfig() (ClientConfig, error) {
-	p, err := s.Struct.Ptr(1)
-	return ClientConfig{Struct: p.Struct()}, err
-}
-
-func (s ConnectSuccess) HasClientConfig() bool {
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s ConnectSuccess) SetClientConfig(v ClientConfig) error {
-	return s.Struct.SetPtr(1, v.Struct.ToPtr())
-}
-
-// NewClientConfig sets the clientConfig field to a newly
-// allocated ClientConfig struct, preferring placement in s's segment.
-func (s ConnectSuccess) NewClientConfig() (ClientConfig, error) {
-	ss, err := NewClientConfig(s.Struct.Segment())
-	if err != nil {
-		return ClientConfig{}, err
-	}
-	err = s.Struct.SetPtr(1, ss.Struct.ToPtr())
-	return ss, err
-}
-
-// ConnectSuccess_List is a list of ConnectSuccess.
-type ConnectSuccess_List struct{ capnp.List }
-
-// NewConnectSuccess creates a new list of ConnectSuccess.
-func NewConnectSuccess_List(s *capnp.Segment, sz int32) (ConnectSuccess_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 2}, sz)
-	return ConnectSuccess_List{l}, err
-}
-
-func (s ConnectSuccess_List) At(i int) ConnectSuccess { return ConnectSuccess{s.List.Struct(i)} }
-
-func (s ConnectSuccess_List) Set(i int, v ConnectSuccess) error { return s.List.SetStruct(i, v.Struct) }
-
-func (s ConnectSuccess_List) String() string {
-	str, _ := text.MarshalList(0x8407e070e0d52605, s.List)
-	return str
-}
-
-// ConnectSuccess_Promise is a wrapper for a ConnectSuccess promised by a client call.
-type ConnectSuccess_Promise struct{ *capnp.Pipeline }
-
-func (p ConnectSuccess_Promise) Struct() (ConnectSuccess, error) {
-	s, err := p.Pipeline.Struct()
-	return ConnectSuccess{s}, err
-}
-
-func (p ConnectSuccess_Promise) ClientConfig() ClientConfig_Promise {
-	return ClientConfig_Promise{Pipeline: p.Pipeline.GetPipeline(1)}
-}
-
-type ClientConfig struct{ capnp.Struct }
-
-// ClientConfig_TypeID is the unique identifier for the type ClientConfig.
-const ClientConfig_TypeID = 0xf0a143f1c95a678e
-
-func NewClientConfig(s *capnp.Segment) (ClientConfig, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 4})
-	return ClientConfig{st}, err
-}
-
-func NewRootClientConfig(s *capnp.Segment) (ClientConfig, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 4})
-	return ClientConfig{st}, err
-}
-
-func ReadRootClientConfig(msg *capnp.Message) (ClientConfig, error) {
-	root, err := msg.RootPtr()
-	return ClientConfig{root.Struct()}, err
-}
-
-func (s ClientConfig) String() string {
-	str, _ := text.Marshal(0xf0a143f1c95a678e, s.Struct)
-	return str
-}
-
-func (s ClientConfig) Version() uint64 {
-	return s.Struct.Uint64(0)
-}
-
-func (s ClientConfig) SetVersion(v uint64) {
-	s.Struct.SetUint64(0, v)
-}
-
-func (s ClientConfig) SupervisorConfig() (SupervisorConfig, error) {
-	p, err := s.Struct.Ptr(0)
-	return SupervisorConfig{Struct: p.Struct()}, err
-}
-
-func (s ClientConfig) HasSupervisorConfig() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s ClientConfig) SetSupervisorConfig(v SupervisorConfig) error {
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewSupervisorConfig sets the supervisorConfig field to a newly
-// allocated SupervisorConfig struct, preferring placement in s's segment.
-func (s ClientConfig) NewSupervisorConfig() (SupervisorConfig, error) {
-	ss, err := NewSupervisorConfig(s.Struct.Segment())
-	if err != nil {
-		return SupervisorConfig{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s ClientConfig) EdgeConnectionConfig() (EdgeConnectionConfig, error) {
-	p, err := s.Struct.Ptr(1)
-	return EdgeConnectionConfig{Struct: p.Struct()}, err
-}
-
-func (s ClientConfig) HasEdgeConnectionConfig() bool {
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s ClientConfig) SetEdgeConnectionConfig(v EdgeConnectionConfig) error {
-	return s.Struct.SetPtr(1, v.Struct.ToPtr())
-}
-
-// NewEdgeConnectionConfig sets the edgeConnectionConfig field to a newly
-// allocated EdgeConnectionConfig struct, preferring placement in s's segment.
-func (s ClientConfig) NewEdgeConnectionConfig() (EdgeConnectionConfig, error) {
-	ss, err := NewEdgeConnectionConfig(s.Struct.Segment())
-	if err != nil {
-		return EdgeConnectionConfig{}, err
-	}
-	err = s.Struct.SetPtr(1, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s ClientConfig) DohProxyConfigs() (DoHProxyConfig_List, error) {
-	p, err := s.Struct.Ptr(2)
-	return DoHProxyConfig_List{List: p.List()}, err
-}
-
-func (s ClientConfig) HasDohProxyConfigs() bool {
-	p, err := s.Struct.Ptr(2)
-	return p.IsValid() || err != nil
-}
-
-func (s ClientConfig) SetDohProxyConfigs(v DoHProxyConfig_List) error {
-	return s.Struct.SetPtr(2, v.List.ToPtr())
-}
-
-// NewDohProxyConfigs sets the dohProxyConfigs field to a newly
-// allocated DoHProxyConfig_List, preferring placement in s's segment.
-func (s ClientConfig) NewDohProxyConfigs(n int32) (DoHProxyConfig_List, error) {
-	l, err := NewDoHProxyConfig_List(s.Struct.Segment(), n)
-	if err != nil {
-		return DoHProxyConfig_List{}, err
-	}
-	err = s.Struct.SetPtr(2, l.List.ToPtr())
-	return l, err
-}
-
-func (s ClientConfig) ReverseProxyConfigs() (ReverseProxyConfig_List, error) {
-	p, err := s.Struct.Ptr(3)
-	return ReverseProxyConfig_List{List: p.List()}, err
-}
-
-func (s ClientConfig) HasReverseProxyConfigs() bool {
-	p, err := s.Struct.Ptr(3)
-	return p.IsValid() || err != nil
-}
-
-func (s ClientConfig) SetReverseProxyConfigs(v ReverseProxyConfig_List) error {
-	return s.Struct.SetPtr(3, v.List.ToPtr())
-}
-
-// NewReverseProxyConfigs sets the reverseProxyConfigs field to a newly
-// allocated ReverseProxyConfig_List, preferring placement in s's segment.
-func (s ClientConfig) NewReverseProxyConfigs(n int32) (ReverseProxyConfig_List, error) {
-	l, err := NewReverseProxyConfig_List(s.Struct.Segment(), n)
-	if err != nil {
-		return ReverseProxyConfig_List{}, err
-	}
-	err = s.Struct.SetPtr(3, l.List.ToPtr())
-	return l, err
-}
-
-// ClientConfig_List is a list of ClientConfig.
-type ClientConfig_List struct{ capnp.List }
-
-// NewClientConfig creates a new list of ClientConfig.
-func NewClientConfig_List(s *capnp.Segment, sz int32) (ClientConfig_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 4}, sz)
-	return ClientConfig_List{l}, err
-}
-
-func (s ClientConfig_List) At(i int) ClientConfig { return ClientConfig{s.List.Struct(i)} }
-
-func (s ClientConfig_List) Set(i int, v ClientConfig) error { return s.List.SetStruct(i, v.Struct) }
-
-func (s ClientConfig_List) String() string {
-	str, _ := text.MarshalList(0xf0a143f1c95a678e, s.List)
-	return str
-}
-
-// ClientConfig_Promise is a wrapper for a ClientConfig promised by a client call.
-type ClientConfig_Promise struct{ *capnp.Pipeline }
-
-func (p ClientConfig_Promise) Struct() (ClientConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return ClientConfig{s}, err
-}
-
-func (p ClientConfig_Promise) SupervisorConfig() SupervisorConfig_Promise {
-	return SupervisorConfig_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
-func (p ClientConfig_Promise) EdgeConnectionConfig() EdgeConnectionConfig_Promise {
-	return EdgeConnectionConfig_Promise{Pipeline: p.Pipeline.GetPipeline(1)}
-}
-
-type SupervisorConfig struct{ capnp.Struct }
-
-// SupervisorConfig_TypeID is the unique identifier for the type SupervisorConfig.
-const SupervisorConfig_TypeID = 0xf7f49b3f779ae258
-
-func NewSupervisorConfig(s *capnp.Segment) (SupervisorConfig, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 24, PointerCount: 0})
-	return SupervisorConfig{st}, err
-}
-
-func NewRootSupervisorConfig(s *capnp.Segment) (SupervisorConfig, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 24, PointerCount: 0})
-	return SupervisorConfig{st}, err
-}
-
-func ReadRootSupervisorConfig(msg *capnp.Message) (SupervisorConfig, error) {
-	root, err := msg.RootPtr()
-	return SupervisorConfig{root.Struct()}, err
-}
-
-func (s SupervisorConfig) String() string {
-	str, _ := text.Marshal(0xf7f49b3f779ae258, s.Struct)
-	return str
-}
-
-func (s SupervisorConfig) AutoUpdateFrequency() int64 {
-	return int64(s.Struct.Uint64(0))
-}
-
-func (s SupervisorConfig) SetAutoUpdateFrequency(v int64) {
-	s.Struct.SetUint64(0, uint64(v))
-}
-
-func (s SupervisorConfig) MetricsUpdateFrequency() int64 {
-	return int64(s.Struct.Uint64(8))
-}
-
-func (s SupervisorConfig) SetMetricsUpdateFrequency(v int64) {
-	s.Struct.SetUint64(8, uint64(v))
-}
-
-func (s SupervisorConfig) GracePeriod() int64 {
-	return int64(s.Struct.Uint64(16))
-}
-
-func (s SupervisorConfig) SetGracePeriod(v int64) {
-	s.Struct.SetUint64(16, uint64(v))
-}
-
-// SupervisorConfig_List is a list of SupervisorConfig.
-type SupervisorConfig_List struct{ capnp.List }
-
-// NewSupervisorConfig creates a new list of SupervisorConfig.
-func NewSupervisorConfig_List(s *capnp.Segment, sz int32) (SupervisorConfig_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 24, PointerCount: 0}, sz)
-	return SupervisorConfig_List{l}, err
-}
-
-func (s SupervisorConfig_List) At(i int) SupervisorConfig { return SupervisorConfig{s.List.Struct(i)} }
-
-func (s SupervisorConfig_List) Set(i int, v SupervisorConfig) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s SupervisorConfig_List) String() string {
-	str, _ := text.MarshalList(0xf7f49b3f779ae258, s.List)
-	return str
-}
-
-// SupervisorConfig_Promise is a wrapper for a SupervisorConfig promised by a client call.
-type SupervisorConfig_Promise struct{ *capnp.Pipeline }
-
-func (p SupervisorConfig_Promise) Struct() (SupervisorConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return SupervisorConfig{s}, err
-}
-
-type EdgeConnectionConfig struct{ capnp.Struct }
-
-// EdgeConnectionConfig_TypeID is the unique identifier for the type EdgeConnectionConfig.
-const EdgeConnectionConfig_TypeID = 0xc744e349009087aa
-
-func NewEdgeConnectionConfig(s *capnp.Segment) (EdgeConnectionConfig, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 32, PointerCount: 1})
-	return EdgeConnectionConfig{st}, err
-}
-
-func NewRootEdgeConnectionConfig(s *capnp.Segment) (EdgeConnectionConfig, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 32, PointerCount: 1})
-	return EdgeConnectionConfig{st}, err
-}
-
-func ReadRootEdgeConnectionConfig(msg *capnp.Message) (EdgeConnectionConfig, error) {
-	root, err := msg.RootPtr()
-	return EdgeConnectionConfig{root.Struct()}, err
-}
-
-func (s EdgeConnectionConfig) String() string {
-	str, _ := text.Marshal(0xc744e349009087aa, s.Struct)
-	return str
-}
-
-func (s EdgeConnectionConfig) NumHAConnections() uint8 {
-	return s.Struct.Uint8(0)
-}
-
-func (s EdgeConnectionConfig) SetNumHAConnections(v uint8) {
-	s.Struct.SetUint8(0, v)
-}
-
-func (s EdgeConnectionConfig) HeartbeatInterval() int64 {
-	return int64(s.Struct.Uint64(8))
-}
-
-func (s EdgeConnectionConfig) SetHeartbeatInterval(v int64) {
-	s.Struct.SetUint64(8, uint64(v))
-}
-
-func (s EdgeConnectionConfig) Timeout() int64 {
-	return int64(s.Struct.Uint64(16))
-}
-
-func (s EdgeConnectionConfig) SetTimeout(v int64) {
-	s.Struct.SetUint64(16, uint64(v))
-}
-
-func (s EdgeConnectionConfig) MaxFailedHeartbeats() uint64 {
-	return s.Struct.Uint64(24)
-}
-
-func (s EdgeConnectionConfig) SetMaxFailedHeartbeats(v uint64) {
-	s.Struct.SetUint64(24, v)
-}
-
-func (s EdgeConnectionConfig) UserCredentialPath() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.Text(), err
-}
-
-func (s EdgeConnectionConfig) HasUserCredentialPath() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s EdgeConnectionConfig) UserCredentialPathBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.TextBytes(), err
-}
-
-func (s EdgeConnectionConfig) SetUserCredentialPath(v string) error {
-	return s.Struct.SetText(0, v)
-}
-
-// EdgeConnectionConfig_List is a list of EdgeConnectionConfig.
-type EdgeConnectionConfig_List struct{ capnp.List }
-
-// NewEdgeConnectionConfig creates a new list of EdgeConnectionConfig.
-func NewEdgeConnectionConfig_List(s *capnp.Segment, sz int32) (EdgeConnectionConfig_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 32, PointerCount: 1}, sz)
-	return EdgeConnectionConfig_List{l}, err
-}
-
-func (s EdgeConnectionConfig_List) At(i int) EdgeConnectionConfig {
-	return EdgeConnectionConfig{s.List.Struct(i)}
-}
-
-func (s EdgeConnectionConfig_List) Set(i int, v EdgeConnectionConfig) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s EdgeConnectionConfig_List) String() string {
-	str, _ := text.MarshalList(0xc744e349009087aa, s.List)
-	return str
-}
-
-// EdgeConnectionConfig_Promise is a wrapper for a EdgeConnectionConfig promised by a client call.
-type EdgeConnectionConfig_Promise struct{ *capnp.Pipeline }
-
-func (p EdgeConnectionConfig_Promise) Struct() (EdgeConnectionConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return EdgeConnectionConfig{s}, err
-}
-
-type ReverseProxyConfig struct{ capnp.Struct }
-type ReverseProxyConfig_originConfig ReverseProxyConfig
-type ReverseProxyConfig_originConfig_Which uint16
-
-const (
-	ReverseProxyConfig_originConfig_Which_http       ReverseProxyConfig_originConfig_Which = 0
-	ReverseProxyConfig_originConfig_Which_websocket  ReverseProxyConfig_originConfig_Which = 1
-	ReverseProxyConfig_originConfig_Which_helloWorld ReverseProxyConfig_originConfig_Which = 2
-)
-
-func (w ReverseProxyConfig_originConfig_Which) String() string {
-	const s = "httpwebsockethelloWorld"
-	switch w {
-	case ReverseProxyConfig_originConfig_Which_http:
-		return s[0:4]
-	case ReverseProxyConfig_originConfig_Which_websocket:
-		return s[4:13]
-	case ReverseProxyConfig_originConfig_Which_helloWorld:
-		return s[13:23]
-
-	}
-	return "ReverseProxyConfig_originConfig_Which(" + strconv.FormatUint(uint64(w), 10) + ")"
-}
-
-// ReverseProxyConfig_TypeID is the unique identifier for the type ReverseProxyConfig.
-const ReverseProxyConfig_TypeID = 0xc766a92976e389c4
-
-func NewReverseProxyConfig(s *capnp.Segment) (ReverseProxyConfig, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 32, PointerCount: 2})
-	return ReverseProxyConfig{st}, err
-}
-
-func NewRootReverseProxyConfig(s *capnp.Segment) (ReverseProxyConfig, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 32, PointerCount: 2})
-	return ReverseProxyConfig{st}, err
-}
-
-func ReadRootReverseProxyConfig(msg *capnp.Message) (ReverseProxyConfig, error) {
-	root, err := msg.RootPtr()
-	return ReverseProxyConfig{root.Struct()}, err
-}
-
-func (s ReverseProxyConfig) String() string {
-	str, _ := text.Marshal(0xc766a92976e389c4, s.Struct)
-	return str
-}
-
-func (s ReverseProxyConfig) TunnelHostname() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.Text(), err
-}
-
-func (s ReverseProxyConfig) HasTunnelHostname() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s ReverseProxyConfig) TunnelHostnameBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.TextBytes(), err
-}
-
-func (s ReverseProxyConfig) SetTunnelHostname(v string) error {
-	return s.Struct.SetText(0, v)
-}
-
-func (s ReverseProxyConfig) OriginConfig() ReverseProxyConfig_originConfig {
-	return ReverseProxyConfig_originConfig(s)
-}
-
-func (s ReverseProxyConfig_originConfig) Which() ReverseProxyConfig_originConfig_Which {
-	return ReverseProxyConfig_originConfig_Which(s.Struct.Uint16(0))
-}
-func (s ReverseProxyConfig_originConfig) Http() (HTTPOriginConfig, error) {
-	if s.Struct.Uint16(0) != 0 {
-		panic("Which() != http")
-	}
-	p, err := s.Struct.Ptr(1)
-	return HTTPOriginConfig{Struct: p.Struct()}, err
-}
-
-func (s ReverseProxyConfig_originConfig) HasHttp() bool {
-	if s.Struct.Uint16(0) != 0 {
-		return false
-	}
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s ReverseProxyConfig_originConfig) SetHttp(v HTTPOriginConfig) error {
-	s.Struct.SetUint16(0, 0)
-	return s.Struct.SetPtr(1, v.Struct.ToPtr())
-}
-
-// NewHttp sets the http field to a newly
-// allocated HTTPOriginConfig struct, preferring placement in s's segment.
-func (s ReverseProxyConfig_originConfig) NewHttp() (HTTPOriginConfig, error) {
-	s.Struct.SetUint16(0, 0)
-	ss, err := NewHTTPOriginConfig(s.Struct.Segment())
-	if err != nil {
-		return HTTPOriginConfig{}, err
-	}
-	err = s.Struct.SetPtr(1, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s ReverseProxyConfig_originConfig) Websocket() (WebSocketOriginConfig, error) {
-	if s.Struct.Uint16(0) != 1 {
-		panic("Which() != websocket")
-	}
-	p, err := s.Struct.Ptr(1)
-	return WebSocketOriginConfig{Struct: p.Struct()}, err
-}
-
-func (s ReverseProxyConfig_originConfig) HasWebsocket() bool {
-	if s.Struct.Uint16(0) != 1 {
-		return false
-	}
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s ReverseProxyConfig_originConfig) SetWebsocket(v WebSocketOriginConfig) error {
-	s.Struct.SetUint16(0, 1)
-	return s.Struct.SetPtr(1, v.Struct.ToPtr())
-}
-
-// NewWebsocket sets the websocket field to a newly
-// allocated WebSocketOriginConfig struct, preferring placement in s's segment.
-func (s ReverseProxyConfig_originConfig) NewWebsocket() (WebSocketOriginConfig, error) {
-	s.Struct.SetUint16(0, 1)
-	ss, err := NewWebSocketOriginConfig(s.Struct.Segment())
-	if err != nil {
-		return WebSocketOriginConfig{}, err
-	}
-	err = s.Struct.SetPtr(1, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s ReverseProxyConfig_originConfig) HelloWorld() (HelloWorldOriginConfig, error) {
-	if s.Struct.Uint16(0) != 2 {
-		panic("Which() != helloWorld")
-	}
-	p, err := s.Struct.Ptr(1)
-	return HelloWorldOriginConfig{Struct: p.Struct()}, err
-}
-
-func (s ReverseProxyConfig_originConfig) HasHelloWorld() bool {
-	if s.Struct.Uint16(0) != 2 {
-		return false
-	}
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s ReverseProxyConfig_originConfig) SetHelloWorld(v HelloWorldOriginConfig) error {
-	s.Struct.SetUint16(0, 2)
-	return s.Struct.SetPtr(1, v.Struct.ToPtr())
-}
-
-// NewHelloWorld sets the helloWorld field to a newly
-// allocated HelloWorldOriginConfig struct, preferring placement in s's segment.
-func (s ReverseProxyConfig_originConfig) NewHelloWorld() (HelloWorldOriginConfig, error) {
-	s.Struct.SetUint16(0, 2)
-	ss, err := NewHelloWorldOriginConfig(s.Struct.Segment())
-	if err != nil {
-		return HelloWorldOriginConfig{}, err
-	}
-	err = s.Struct.SetPtr(1, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s ReverseProxyConfig) Retries() uint64 {
-	return s.Struct.Uint64(8)
-}
-
-func (s ReverseProxyConfig) SetRetries(v uint64) {
-	s.Struct.SetUint64(8, v)
-}
-
-func (s ReverseProxyConfig) ConnectionTimeout() int64 {
-	return int64(s.Struct.Uint64(16))
-}
-
-func (s ReverseProxyConfig) SetConnectionTimeout(v int64) {
-	s.Struct.SetUint64(16, uint64(v))
-}
-
-func (s ReverseProxyConfig) CompressionQuality() uint64 {
-	return s.Struct.Uint64(24)
-}
-
-func (s ReverseProxyConfig) SetCompressionQuality(v uint64) {
-	s.Struct.SetUint64(24, v)
-}
-
-// ReverseProxyConfig_List is a list of ReverseProxyConfig.
-type ReverseProxyConfig_List struct{ capnp.List }
-
-// NewReverseProxyConfig creates a new list of ReverseProxyConfig.
-func NewReverseProxyConfig_List(s *capnp.Segment, sz int32) (ReverseProxyConfig_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 32, PointerCount: 2}, sz)
-	return ReverseProxyConfig_List{l}, err
-}
-
-func (s ReverseProxyConfig_List) At(i int) ReverseProxyConfig {
-	return ReverseProxyConfig{s.List.Struct(i)}
-}
-
-func (s ReverseProxyConfig_List) Set(i int, v ReverseProxyConfig) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s ReverseProxyConfig_List) String() string {
-	str, _ := text.MarshalList(0xc766a92976e389c4, s.List)
-	return str
-}
-
-// ReverseProxyConfig_Promise is a wrapper for a ReverseProxyConfig promised by a client call.
-type ReverseProxyConfig_Promise struct{ *capnp.Pipeline }
-
-func (p ReverseProxyConfig_Promise) Struct() (ReverseProxyConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return ReverseProxyConfig{s}, err
-}
-
-func (p ReverseProxyConfig_Promise) OriginConfig() ReverseProxyConfig_originConfig_Promise {
-	return ReverseProxyConfig_originConfig_Promise{p.Pipeline}
-}
-
-// ReverseProxyConfig_originConfig_Promise is a wrapper for a ReverseProxyConfig_originConfig promised by a client call.
-type ReverseProxyConfig_originConfig_Promise struct{ *capnp.Pipeline }
-
-func (p ReverseProxyConfig_originConfig_Promise) Struct() (ReverseProxyConfig_originConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return ReverseProxyConfig_originConfig{s}, err
-}
-
-func (p ReverseProxyConfig_originConfig_Promise) Http() HTTPOriginConfig_Promise {
-	return HTTPOriginConfig_Promise{Pipeline: p.Pipeline.GetPipeline(1)}
-}
-
-func (p ReverseProxyConfig_originConfig_Promise) Websocket() WebSocketOriginConfig_Promise {
-	return WebSocketOriginConfig_Promise{Pipeline: p.Pipeline.GetPipeline(1)}
-}
-
-func (p ReverseProxyConfig_originConfig_Promise) HelloWorld() HelloWorldOriginConfig_Promise {
-	return HelloWorldOriginConfig_Promise{Pipeline: p.Pipeline.GetPipeline(1)}
-}
-
-type WebSocketOriginConfig struct{ capnp.Struct }
-
-// WebSocketOriginConfig_TypeID is the unique identifier for the type WebSocketOriginConfig.
-const WebSocketOriginConfig_TypeID = 0xf9c895683ed9ac4c
-
-func NewWebSocketOriginConfig(s *capnp.Segment) (WebSocketOriginConfig, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 3})
-	return WebSocketOriginConfig{st}, err
-}
-
-func NewRootWebSocketOriginConfig(s *capnp.Segment) (WebSocketOriginConfig, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 3})
-	return WebSocketOriginConfig{st}, err
-}
-
-func ReadRootWebSocketOriginConfig(msg *capnp.Message) (WebSocketOriginConfig, error) {
-	root, err := msg.RootPtr()
-	return WebSocketOriginConfig{root.Struct()}, err
-}
-
-func (s WebSocketOriginConfig) String() string {
-	str, _ := text.Marshal(0xf9c895683ed9ac4c, s.Struct)
-	return str
-}
-
-func (s WebSocketOriginConfig) UrlString() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.Text(), err
-}
-
-func (s WebSocketOriginConfig) HasUrlString() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s WebSocketOriginConfig) UrlStringBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.TextBytes(), err
-}
-
-func (s WebSocketOriginConfig) SetUrlString(v string) error {
-	return s.Struct.SetText(0, v)
-}
-
-func (s WebSocketOriginConfig) TlsVerify() bool {
-	return s.Struct.Bit(0)
-}
-
-func (s WebSocketOriginConfig) SetTlsVerify(v bool) {
-	s.Struct.SetBit(0, v)
-}
-
-func (s WebSocketOriginConfig) OriginCAPool() (string, error) {
-	p, err := s.Struct.Ptr(1)
-	return p.Text(), err
-}
-
-func (s WebSocketOriginConfig) HasOriginCAPool() bool {
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s WebSocketOriginConfig) OriginCAPoolBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(1)
-	return p.TextBytes(), err
-}
-
-func (s WebSocketOriginConfig) SetOriginCAPool(v string) error {
-	return s.Struct.SetText(1, v)
-}
-
-func (s WebSocketOriginConfig) OriginServerName() (string, error) {
-	p, err := s.Struct.Ptr(2)
-	return p.Text(), err
-}
-
-func (s WebSocketOriginConfig) HasOriginServerName() bool {
-	p, err := s.Struct.Ptr(2)
-	return p.IsValid() || err != nil
-}
-
-func (s WebSocketOriginConfig) OriginServerNameBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(2)
-	return p.TextBytes(), err
-}
-
-func (s WebSocketOriginConfig) SetOriginServerName(v string) error {
-	return s.Struct.SetText(2, v)
-}
-
-// WebSocketOriginConfig_List is a list of WebSocketOriginConfig.
-type WebSocketOriginConfig_List struct{ capnp.List }
-
-// NewWebSocketOriginConfig creates a new list of WebSocketOriginConfig.
-func NewWebSocketOriginConfig_List(s *capnp.Segment, sz int32) (WebSocketOriginConfig_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 3}, sz)
-	return WebSocketOriginConfig_List{l}, err
-}
-
-func (s WebSocketOriginConfig_List) At(i int) WebSocketOriginConfig {
-	return WebSocketOriginConfig{s.List.Struct(i)}
-}
-
-func (s WebSocketOriginConfig_List) Set(i int, v WebSocketOriginConfig) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s WebSocketOriginConfig_List) String() string {
-	str, _ := text.MarshalList(0xf9c895683ed9ac4c, s.List)
-	return str
-}
-
-// WebSocketOriginConfig_Promise is a wrapper for a WebSocketOriginConfig promised by a client call.
-type WebSocketOriginConfig_Promise struct{ *capnp.Pipeline }
-
-func (p WebSocketOriginConfig_Promise) Struct() (WebSocketOriginConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return WebSocketOriginConfig{s}, err
-}
-
-type HTTPOriginConfig struct{ capnp.Struct }
-
-// HTTPOriginConfig_TypeID is the unique identifier for the type HTTPOriginConfig.
-const HTTPOriginConfig_TypeID = 0xe4a6a1bc139211b4
-
-func NewHTTPOriginConfig(s *capnp.Segment) (HTTPOriginConfig, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 56, PointerCount: 3})
-	return HTTPOriginConfig{st}, err
-}
-
-func NewRootHTTPOriginConfig(s *capnp.Segment) (HTTPOriginConfig, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 56, PointerCount: 3})
-	return HTTPOriginConfig{st}, err
-}
-
-func ReadRootHTTPOriginConfig(msg *capnp.Message) (HTTPOriginConfig, error) {
-	root, err := msg.RootPtr()
-	return HTTPOriginConfig{root.Struct()}, err
-}
-
-func (s HTTPOriginConfig) String() string {
-	str, _ := text.Marshal(0xe4a6a1bc139211b4, s.Struct)
-	return str
-}
-
-func (s HTTPOriginConfig) UrlString() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.Text(), err
-}
-
-func (s HTTPOriginConfig) HasUrlString() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s HTTPOriginConfig) UrlStringBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.TextBytes(), err
-}
-
-func (s HTTPOriginConfig) SetUrlString(v string) error {
-	return s.Struct.SetText(0, v)
-}
-
-func (s HTTPOriginConfig) TcpKeepAlive() int64 {
-	return int64(s.Struct.Uint64(0))
-}
-
-func (s HTTPOriginConfig) SetTcpKeepAlive(v int64) {
-	s.Struct.SetUint64(0, uint64(v))
-}
-
-func (s HTTPOriginConfig) DialDualStack() bool {
-	return s.Struct.Bit(64)
-}
-
-func (s HTTPOriginConfig) SetDialDualStack(v bool) {
-	s.Struct.SetBit(64, v)
-}
-
-func (s HTTPOriginConfig) TlsHandshakeTimeout() int64 {
-	return int64(s.Struct.Uint64(16))
-}
-
-func (s HTTPOriginConfig) SetTlsHandshakeTimeout(v int64) {
-	s.Struct.SetUint64(16, uint64(v))
-}
-
-func (s HTTPOriginConfig) TlsVerify() bool {
-	return s.Struct.Bit(65)
-}
-
-func (s HTTPOriginConfig) SetTlsVerify(v bool) {
-	s.Struct.SetBit(65, v)
-}
-
-func (s HTTPOriginConfig) OriginCAPool() (string, error) {
-	p, err := s.Struct.Ptr(1)
-	return p.Text(), err
-}
-
-func (s HTTPOriginConfig) HasOriginCAPool() bool {
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s HTTPOriginConfig) OriginCAPoolBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(1)
-	return p.TextBytes(), err
-}
-
-func (s HTTPOriginConfig) SetOriginCAPool(v string) error {
-	return s.Struct.SetText(1, v)
-}
-
-func (s HTTPOriginConfig) OriginServerName() (string, error) {
-	p, err := s.Struct.Ptr(2)
-	return p.Text(), err
-}
-
-func (s HTTPOriginConfig) HasOriginServerName() bool {
-	p, err := s.Struct.Ptr(2)
-	return p.IsValid() || err != nil
-}
-
-func (s HTTPOriginConfig) OriginServerNameBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(2)
-	return p.TextBytes(), err
-}
-
-func (s HTTPOriginConfig) SetOriginServerName(v string) error {
-	return s.Struct.SetText(2, v)
-}
-
-func (s HTTPOriginConfig) MaxIdleConnections() uint64 {
-	return s.Struct.Uint64(24)
-}
-
-func (s HTTPOriginConfig) SetMaxIdleConnections(v uint64) {
-	s.Struct.SetUint64(24, v)
-}
-
-func (s HTTPOriginConfig) IdleConnectionTimeout() int64 {
-	return int64(s.Struct.Uint64(32))
-}
-
-func (s HTTPOriginConfig) SetIdleConnectionTimeout(v int64) {
-	s.Struct.SetUint64(32, uint64(v))
-}
-
-func (s HTTPOriginConfig) ProxyConnectionTimeout() int64 {
-	return int64(s.Struct.Uint64(40))
-}
-
-func (s HTTPOriginConfig) SetProxyConnectionTimeout(v int64) {
-	s.Struct.SetUint64(40, uint64(v))
-}
-
-func (s HTTPOriginConfig) ExpectContinueTimeout() int64 {
-	return int64(s.Struct.Uint64(48))
-}
-
-func (s HTTPOriginConfig) SetExpectContinueTimeout(v int64) {
-	s.Struct.SetUint64(48, uint64(v))
-}
-
-func (s HTTPOriginConfig) ChunkedEncoding() bool {
-	return s.Struct.Bit(66)
-}
-
-func (s HTTPOriginConfig) SetChunkedEncoding(v bool) {
-	s.Struct.SetBit(66, v)
-}
-
-// HTTPOriginConfig_List is a list of HTTPOriginConfig.
-type HTTPOriginConfig_List struct{ capnp.List }
-
-// NewHTTPOriginConfig creates a new list of HTTPOriginConfig.
-func NewHTTPOriginConfig_List(s *capnp.Segment, sz int32) (HTTPOriginConfig_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 56, PointerCount: 3}, sz)
-	return HTTPOriginConfig_List{l}, err
-}
-
-func (s HTTPOriginConfig_List) At(i int) HTTPOriginConfig { return HTTPOriginConfig{s.List.Struct(i)} }
-
-func (s HTTPOriginConfig_List) Set(i int, v HTTPOriginConfig) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s HTTPOriginConfig_List) String() string {
-	str, _ := text.MarshalList(0xe4a6a1bc139211b4, s.List)
-	return str
-}
-
-// HTTPOriginConfig_Promise is a wrapper for a HTTPOriginConfig promised by a client call.
-type HTTPOriginConfig_Promise struct{ *capnp.Pipeline }
-
-func (p HTTPOriginConfig_Promise) Struct() (HTTPOriginConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return HTTPOriginConfig{s}, err
-}
-
-type DoHProxyConfig struct{ capnp.Struct }
-
-// DoHProxyConfig_TypeID is the unique identifier for the type DoHProxyConfig.
-const DoHProxyConfig_TypeID = 0xb167b0bebe562cd0
-
-func NewDoHProxyConfig(s *capnp.Segment) (DoHProxyConfig, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2})
-	return DoHProxyConfig{st}, err
-}
-
-func NewRootDoHProxyConfig(s *capnp.Segment) (DoHProxyConfig, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2})
-	return DoHProxyConfig{st}, err
-}
-
-func ReadRootDoHProxyConfig(msg *capnp.Message) (DoHProxyConfig, error) {
-	root, err := msg.RootPtr()
-	return DoHProxyConfig{root.Struct()}, err
-}
-
-func (s DoHProxyConfig) String() string {
-	str, _ := text.Marshal(0xb167b0bebe562cd0, s.Struct)
-	return str
-}
-
-func (s DoHProxyConfig) ListenHost() (string, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.Text(), err
-}
-
-func (s DoHProxyConfig) HasListenHost() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s DoHProxyConfig) ListenHostBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(0)
-	return p.TextBytes(), err
-}
-
-func (s DoHProxyConfig) SetListenHost(v string) error {
-	return s.Struct.SetText(0, v)
-}
-
-func (s DoHProxyConfig) ListenPort() uint16 {
-	return s.Struct.Uint16(0)
-}
-
-func (s DoHProxyConfig) SetListenPort(v uint16) {
-	s.Struct.SetUint16(0, v)
-}
-
-func (s DoHProxyConfig) Upstreams() (capnp.TextList, error) {
-	p, err := s.Struct.Ptr(1)
-	return capnp.TextList{List: p.List()}, err
-}
-
-func (s DoHProxyConfig) HasUpstreams() bool {
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s DoHProxyConfig) SetUpstreams(v capnp.TextList) error {
-	return s.Struct.SetPtr(1, v.List.ToPtr())
-}
-
-// NewUpstreams sets the upstreams field to a newly
-// allocated capnp.TextList, preferring placement in s's segment.
-func (s DoHProxyConfig) NewUpstreams(n int32) (capnp.TextList, error) {
-	l, err := capnp.NewTextList(s.Struct.Segment(), n)
-	if err != nil {
-		return capnp.TextList{}, err
-	}
-	err = s.Struct.SetPtr(1, l.List.ToPtr())
-	return l, err
-}
-
-// DoHProxyConfig_List is a list of DoHProxyConfig.
-type DoHProxyConfig_List struct{ capnp.List }
-
-// NewDoHProxyConfig creates a new list of DoHProxyConfig.
-func NewDoHProxyConfig_List(s *capnp.Segment, sz int32) (DoHProxyConfig_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2}, sz)
-	return DoHProxyConfig_List{l}, err
-}
-
-func (s DoHProxyConfig_List) At(i int) DoHProxyConfig { return DoHProxyConfig{s.List.Struct(i)} }
-
-func (s DoHProxyConfig_List) Set(i int, v DoHProxyConfig) error { return s.List.SetStruct(i, v.Struct) }
-
-func (s DoHProxyConfig_List) String() string {
-	str, _ := text.MarshalList(0xb167b0bebe562cd0, s.List)
-	return str
-}
-
-// DoHProxyConfig_Promise is a wrapper for a DoHProxyConfig promised by a client call.
-type DoHProxyConfig_Promise struct{ *capnp.Pipeline }
-
-func (p DoHProxyConfig_Promise) Struct() (DoHProxyConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return DoHProxyConfig{s}, err
-}
-
-type HelloWorldOriginConfig struct{ capnp.Struct }
-
-// HelloWorldOriginConfig_TypeID is the unique identifier for the type HelloWorldOriginConfig.
-const HelloWorldOriginConfig_TypeID = 0x8891f360e47c30d3
-
-func NewHelloWorldOriginConfig(s *capnp.Segment) (HelloWorldOriginConfig, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
-	return HelloWorldOriginConfig{st}, err
-}
-
-func NewRootHelloWorldOriginConfig(s *capnp.Segment) (HelloWorldOriginConfig, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
-	return HelloWorldOriginConfig{st}, err
-}
-
-func ReadRootHelloWorldOriginConfig(msg *capnp.Message) (HelloWorldOriginConfig, error) {
-	root, err := msg.RootPtr()
-	return HelloWorldOriginConfig{root.Struct()}, err
-}
-
-func (s HelloWorldOriginConfig) String() string {
-	str, _ := text.Marshal(0x8891f360e47c30d3, s.Struct)
-	return str
-}
-
-// HelloWorldOriginConfig_List is a list of HelloWorldOriginConfig.
-type HelloWorldOriginConfig_List struct{ capnp.List }
-
-// NewHelloWorldOriginConfig creates a new list of HelloWorldOriginConfig.
-func NewHelloWorldOriginConfig_List(s *capnp.Segment, sz int32) (HelloWorldOriginConfig_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0}, sz)
-	return HelloWorldOriginConfig_List{l}, err
-}
-
-func (s HelloWorldOriginConfig_List) At(i int) HelloWorldOriginConfig {
-	return HelloWorldOriginConfig{s.List.Struct(i)}
-}
-
-func (s HelloWorldOriginConfig_List) Set(i int, v HelloWorldOriginConfig) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s HelloWorldOriginConfig_List) String() string {
-	str, _ := text.MarshalList(0x8891f360e47c30d3, s.List)
-	return str
-}
-
-// HelloWorldOriginConfig_Promise is a wrapper for a HelloWorldOriginConfig promised by a client call.
-type HelloWorldOriginConfig_Promise struct{ *capnp.Pipeline }
-
-func (p HelloWorldOriginConfig_Promise) Struct() (HelloWorldOriginConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return HelloWorldOriginConfig{s}, err
 }
 
 type Tag struct{ capnp.Struct }
@@ -2307,354 +785,6 @@ func (p ServerInfo_Promise) Struct() (ServerInfo, error) {
 	return ServerInfo{s}, err
 }
 
-type UseConfigurationResult struct{ capnp.Struct }
-
-// UseConfigurationResult_TypeID is the unique identifier for the type UseConfigurationResult.
-const UseConfigurationResult_TypeID = 0xd58a254e7a792b87
-
-func NewUseConfigurationResult(s *capnp.Segment) (UseConfigurationResult, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
-	return UseConfigurationResult{st}, err
-}
-
-func NewRootUseConfigurationResult(s *capnp.Segment) (UseConfigurationResult, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
-	return UseConfigurationResult{st}, err
-}
-
-func ReadRootUseConfigurationResult(msg *capnp.Message) (UseConfigurationResult, error) {
-	root, err := msg.RootPtr()
-	return UseConfigurationResult{root.Struct()}, err
-}
-
-func (s UseConfigurationResult) String() string {
-	str, _ := text.Marshal(0xd58a254e7a792b87, s.Struct)
-	return str
-}
-
-func (s UseConfigurationResult) Success() bool {
-	return s.Struct.Bit(0)
-}
-
-func (s UseConfigurationResult) SetSuccess(v bool) {
-	s.Struct.SetBit(0, v)
-}
-
-func (s UseConfigurationResult) FailedConfigs() (FailedConfig_List, error) {
-	p, err := s.Struct.Ptr(0)
-	return FailedConfig_List{List: p.List()}, err
-}
-
-func (s UseConfigurationResult) HasFailedConfigs() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s UseConfigurationResult) SetFailedConfigs(v FailedConfig_List) error {
-	return s.Struct.SetPtr(0, v.List.ToPtr())
-}
-
-// NewFailedConfigs sets the failedConfigs field to a newly
-// allocated FailedConfig_List, preferring placement in s's segment.
-func (s UseConfigurationResult) NewFailedConfigs(n int32) (FailedConfig_List, error) {
-	l, err := NewFailedConfig_List(s.Struct.Segment(), n)
-	if err != nil {
-		return FailedConfig_List{}, err
-	}
-	err = s.Struct.SetPtr(0, l.List.ToPtr())
-	return l, err
-}
-
-// UseConfigurationResult_List is a list of UseConfigurationResult.
-type UseConfigurationResult_List struct{ capnp.List }
-
-// NewUseConfigurationResult creates a new list of UseConfigurationResult.
-func NewUseConfigurationResult_List(s *capnp.Segment, sz int32) (UseConfigurationResult_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1}, sz)
-	return UseConfigurationResult_List{l}, err
-}
-
-func (s UseConfigurationResult_List) At(i int) UseConfigurationResult {
-	return UseConfigurationResult{s.List.Struct(i)}
-}
-
-func (s UseConfigurationResult_List) Set(i int, v UseConfigurationResult) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s UseConfigurationResult_List) String() string {
-	str, _ := text.MarshalList(0xd58a254e7a792b87, s.List)
-	return str
-}
-
-// UseConfigurationResult_Promise is a wrapper for a UseConfigurationResult promised by a client call.
-type UseConfigurationResult_Promise struct{ *capnp.Pipeline }
-
-func (p UseConfigurationResult_Promise) Struct() (UseConfigurationResult, error) {
-	s, err := p.Pipeline.Struct()
-	return UseConfigurationResult{s}, err
-}
-
-type FailedConfig struct{ capnp.Struct }
-type FailedConfig_config FailedConfig
-type FailedConfig_config_Which uint16
-
-const (
-	FailedConfig_config_Which_supervisor     FailedConfig_config_Which = 0
-	FailedConfig_config_Which_edgeConnection FailedConfig_config_Which = 1
-	FailedConfig_config_Which_doh            FailedConfig_config_Which = 2
-	FailedConfig_config_Which_reverseProxy   FailedConfig_config_Which = 3
-)
-
-func (w FailedConfig_config_Which) String() string {
-	const s = "supervisoredgeConnectiondohreverseProxy"
-	switch w {
-	case FailedConfig_config_Which_supervisor:
-		return s[0:10]
-	case FailedConfig_config_Which_edgeConnection:
-		return s[10:24]
-	case FailedConfig_config_Which_doh:
-		return s[24:27]
-	case FailedConfig_config_Which_reverseProxy:
-		return s[27:39]
-
-	}
-	return "FailedConfig_config_Which(" + strconv.FormatUint(uint64(w), 10) + ")"
-}
-
-// FailedConfig_TypeID is the unique identifier for the type FailedConfig.
-const FailedConfig_TypeID = 0xea20b390b257d1a5
-
-func NewFailedConfig(s *capnp.Segment) (FailedConfig, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2})
-	return FailedConfig{st}, err
-}
-
-func NewRootFailedConfig(s *capnp.Segment) (FailedConfig, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2})
-	return FailedConfig{st}, err
-}
-
-func ReadRootFailedConfig(msg *capnp.Message) (FailedConfig, error) {
-	root, err := msg.RootPtr()
-	return FailedConfig{root.Struct()}, err
-}
-
-func (s FailedConfig) String() string {
-	str, _ := text.Marshal(0xea20b390b257d1a5, s.Struct)
-	return str
-}
-
-func (s FailedConfig) Config() FailedConfig_config { return FailedConfig_config(s) }
-
-func (s FailedConfig_config) Which() FailedConfig_config_Which {
-	return FailedConfig_config_Which(s.Struct.Uint16(0))
-}
-func (s FailedConfig_config) Supervisor() (SupervisorConfig, error) {
-	if s.Struct.Uint16(0) != 0 {
-		panic("Which() != supervisor")
-	}
-	p, err := s.Struct.Ptr(0)
-	return SupervisorConfig{Struct: p.Struct()}, err
-}
-
-func (s FailedConfig_config) HasSupervisor() bool {
-	if s.Struct.Uint16(0) != 0 {
-		return false
-	}
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s FailedConfig_config) SetSupervisor(v SupervisorConfig) error {
-	s.Struct.SetUint16(0, 0)
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewSupervisor sets the supervisor field to a newly
-// allocated SupervisorConfig struct, preferring placement in s's segment.
-func (s FailedConfig_config) NewSupervisor() (SupervisorConfig, error) {
-	s.Struct.SetUint16(0, 0)
-	ss, err := NewSupervisorConfig(s.Struct.Segment())
-	if err != nil {
-		return SupervisorConfig{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s FailedConfig_config) EdgeConnection() (EdgeConnectionConfig, error) {
-	if s.Struct.Uint16(0) != 1 {
-		panic("Which() != edgeConnection")
-	}
-	p, err := s.Struct.Ptr(0)
-	return EdgeConnectionConfig{Struct: p.Struct()}, err
-}
-
-func (s FailedConfig_config) HasEdgeConnection() bool {
-	if s.Struct.Uint16(0) != 1 {
-		return false
-	}
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s FailedConfig_config) SetEdgeConnection(v EdgeConnectionConfig) error {
-	s.Struct.SetUint16(0, 1)
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewEdgeConnection sets the edgeConnection field to a newly
-// allocated EdgeConnectionConfig struct, preferring placement in s's segment.
-func (s FailedConfig_config) NewEdgeConnection() (EdgeConnectionConfig, error) {
-	s.Struct.SetUint16(0, 1)
-	ss, err := NewEdgeConnectionConfig(s.Struct.Segment())
-	if err != nil {
-		return EdgeConnectionConfig{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s FailedConfig_config) Doh() (DoHProxyConfig, error) {
-	if s.Struct.Uint16(0) != 2 {
-		panic("Which() != doh")
-	}
-	p, err := s.Struct.Ptr(0)
-	return DoHProxyConfig{Struct: p.Struct()}, err
-}
-
-func (s FailedConfig_config) HasDoh() bool {
-	if s.Struct.Uint16(0) != 2 {
-		return false
-	}
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s FailedConfig_config) SetDoh(v DoHProxyConfig) error {
-	s.Struct.SetUint16(0, 2)
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewDoh sets the doh field to a newly
-// allocated DoHProxyConfig struct, preferring placement in s's segment.
-func (s FailedConfig_config) NewDoh() (DoHProxyConfig, error) {
-	s.Struct.SetUint16(0, 2)
-	ss, err := NewDoHProxyConfig(s.Struct.Segment())
-	if err != nil {
-		return DoHProxyConfig{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s FailedConfig_config) ReverseProxy() (ReverseProxyConfig, error) {
-	if s.Struct.Uint16(0) != 3 {
-		panic("Which() != reverseProxy")
-	}
-	p, err := s.Struct.Ptr(0)
-	return ReverseProxyConfig{Struct: p.Struct()}, err
-}
-
-func (s FailedConfig_config) HasReverseProxy() bool {
-	if s.Struct.Uint16(0) != 3 {
-		return false
-	}
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s FailedConfig_config) SetReverseProxy(v ReverseProxyConfig) error {
-	s.Struct.SetUint16(0, 3)
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewReverseProxy sets the reverseProxy field to a newly
-// allocated ReverseProxyConfig struct, preferring placement in s's segment.
-func (s FailedConfig_config) NewReverseProxy() (ReverseProxyConfig, error) {
-	s.Struct.SetUint16(0, 3)
-	ss, err := NewReverseProxyConfig(s.Struct.Segment())
-	if err != nil {
-		return ReverseProxyConfig{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-func (s FailedConfig) Reason() (string, error) {
-	p, err := s.Struct.Ptr(1)
-	return p.Text(), err
-}
-
-func (s FailedConfig) HasReason() bool {
-	p, err := s.Struct.Ptr(1)
-	return p.IsValid() || err != nil
-}
-
-func (s FailedConfig) ReasonBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(1)
-	return p.TextBytes(), err
-}
-
-func (s FailedConfig) SetReason(v string) error {
-	return s.Struct.SetText(1, v)
-}
-
-// FailedConfig_List is a list of FailedConfig.
-type FailedConfig_List struct{ capnp.List }
-
-// NewFailedConfig creates a new list of FailedConfig.
-func NewFailedConfig_List(s *capnp.Segment, sz int32) (FailedConfig_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 2}, sz)
-	return FailedConfig_List{l}, err
-}
-
-func (s FailedConfig_List) At(i int) FailedConfig { return FailedConfig{s.List.Struct(i)} }
-
-func (s FailedConfig_List) Set(i int, v FailedConfig) error { return s.List.SetStruct(i, v.Struct) }
-
-func (s FailedConfig_List) String() string {
-	str, _ := text.MarshalList(0xea20b390b257d1a5, s.List)
-	return str
-}
-
-// FailedConfig_Promise is a wrapper for a FailedConfig promised by a client call.
-type FailedConfig_Promise struct{ *capnp.Pipeline }
-
-func (p FailedConfig_Promise) Struct() (FailedConfig, error) {
-	s, err := p.Pipeline.Struct()
-	return FailedConfig{s}, err
-}
-
-func (p FailedConfig_Promise) Config() FailedConfig_config_Promise {
-	return FailedConfig_config_Promise{p.Pipeline}
-}
-
-// FailedConfig_config_Promise is a wrapper for a FailedConfig_config promised by a client call.
-type FailedConfig_config_Promise struct{ *capnp.Pipeline }
-
-func (p FailedConfig_config_Promise) Struct() (FailedConfig_config, error) {
-	s, err := p.Pipeline.Struct()
-	return FailedConfig_config{s}, err
-}
-
-func (p FailedConfig_config_Promise) Supervisor() SupervisorConfig_Promise {
-	return SupervisorConfig_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
-func (p FailedConfig_config_Promise) EdgeConnection() EdgeConnectionConfig_Promise {
-	return EdgeConnectionConfig_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
-func (p FailedConfig_config_Promise) Doh() DoHProxyConfig_Promise {
-	return DoHProxyConfig_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
-func (p FailedConfig_config_Promise) ReverseProxy() ReverseProxyConfig_Promise {
-	return ReverseProxyConfig_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
 type AuthenticateResponse struct{ capnp.Struct }
 
 // AuthenticateResponse_TypeID is the unique identifier for the type AuthenticateResponse.
@@ -2835,9 +965,9 @@ func (c TunnelServer) UnregisterTunnel(ctx context.Context, params func(TunnelSe
 	}
 	return TunnelServer_unregisterTunnel_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
 }
-func (c TunnelServer) Connect(ctx context.Context, params func(TunnelServer_connect_Params) error, opts ...capnp.CallOption) TunnelServer_connect_Results_Promise {
+func (c TunnelServer) ObsoleteDeclarativeTunnelConnect(ctx context.Context, params func(TunnelServer_obsoleteDeclarativeTunnelConnect_Params) error, opts ...capnp.CallOption) TunnelServer_obsoleteDeclarativeTunnelConnect_Results_Promise {
 	if c.Client == nil {
-		return TunnelServer_connect_Results_Promise{Pipeline: capnp.NewPipeline(capnp.ErrorAnswer(capnp.ErrNullClient))}
+		return TunnelServer_obsoleteDeclarativeTunnelConnect_Results_Promise{Pipeline: capnp.NewPipeline(capnp.ErrorAnswer(capnp.ErrNullClient))}
 	}
 	call := &capnp.Call{
 		Ctx: ctx,
@@ -2845,15 +975,17 @@ func (c TunnelServer) Connect(ctx context.Context, params func(TunnelServer_conn
 			InterfaceID:   0xea58385c65416035,
 			MethodID:      3,
 			InterfaceName: "tunnelrpc/tunnelrpc.capnp:TunnelServer",
-			MethodName:    "connect",
+			MethodName:    "obsoleteDeclarativeTunnelConnect",
 		},
 		Options: capnp.NewCallOptions(opts),
 	}
 	if params != nil {
-		call.ParamsSize = capnp.ObjectSize{DataSize: 0, PointerCount: 1}
-		call.ParamsFunc = func(s capnp.Struct) error { return params(TunnelServer_connect_Params{Struct: s}) }
+		call.ParamsSize = capnp.ObjectSize{DataSize: 0, PointerCount: 0}
+		call.ParamsFunc = func(s capnp.Struct) error {
+			return params(TunnelServer_obsoleteDeclarativeTunnelConnect_Params{Struct: s})
+		}
 	}
-	return TunnelServer_connect_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
 }
 func (c TunnelServer) Authenticate(ctx context.Context, params func(TunnelServer_authenticate_Params) error, opts ...capnp.CallOption) TunnelServer_authenticate_Results_Promise {
 	if c.Client == nil {
@@ -2890,7 +1022,7 @@ func (c TunnelServer) ReconnectTunnel(ctx context.Context, params func(TunnelSer
 		Options: capnp.NewCallOptions(opts),
 	}
 	if params != nil {
-		call.ParamsSize = capnp.ObjectSize{DataSize: 0, PointerCount: 4}
+		call.ParamsSize = capnp.ObjectSize{DataSize: 0, PointerCount: 5}
 		call.ParamsFunc = func(s capnp.Struct) error { return params(TunnelServer_reconnectTunnel_Params{Struct: s}) }
 	}
 	return TunnelServer_reconnectTunnel_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
@@ -2903,7 +1035,7 @@ type TunnelServer_Server interface {
 
 	UnregisterTunnel(TunnelServer_unregisterTunnel) error
 
-	Connect(TunnelServer_connect) error
+	ObsoleteDeclarativeTunnelConnect(TunnelServer_obsoleteDeclarativeTunnelConnect) error
 
 	Authenticate(TunnelServer_authenticate) error
 
@@ -2967,13 +1099,13 @@ func TunnelServer_Methods(methods []server.Method, s TunnelServer_Server) []serv
 			InterfaceID:   0xea58385c65416035,
 			MethodID:      3,
 			InterfaceName: "tunnelrpc/tunnelrpc.capnp:TunnelServer",
-			MethodName:    "connect",
+			MethodName:    "obsoleteDeclarativeTunnelConnect",
 		},
 		Impl: func(c context.Context, opts capnp.CallOptions, p, r capnp.Struct) error {
-			call := TunnelServer_connect{c, opts, TunnelServer_connect_Params{Struct: p}, TunnelServer_connect_Results{Struct: r}}
-			return s.Connect(call)
+			call := TunnelServer_obsoleteDeclarativeTunnelConnect{c, opts, TunnelServer_obsoleteDeclarativeTunnelConnect_Params{Struct: p}, TunnelServer_obsoleteDeclarativeTunnelConnect_Results{Struct: r}}
+			return s.ObsoleteDeclarativeTunnelConnect(call)
 		},
-		ResultsSize: capnp.ObjectSize{DataSize: 0, PointerCount: 1},
+		ResultsSize: capnp.ObjectSize{DataSize: 0, PointerCount: 0},
 	})
 
 	methods = append(methods, server.Method{
@@ -3031,12 +1163,12 @@ type TunnelServer_unregisterTunnel struct {
 	Results TunnelServer_unregisterTunnel_Results
 }
 
-// TunnelServer_connect holds the arguments for a server call to TunnelServer.connect.
-type TunnelServer_connect struct {
+// TunnelServer_obsoleteDeclarativeTunnelConnect holds the arguments for a server call to TunnelServer.obsoleteDeclarativeTunnelConnect.
+type TunnelServer_obsoleteDeclarativeTunnelConnect struct {
 	Ctx     context.Context
 	Options capnp.CallOptions
-	Params  TunnelServer_connect_Params
-	Results TunnelServer_connect_Results
+	Params  TunnelServer_obsoleteDeclarativeTunnelConnect_Params
+	Results TunnelServer_obsoleteDeclarativeTunnelConnect_Results
 }
 
 // TunnelServer_authenticate holds the arguments for a server call to TunnelServer.authenticate.
@@ -3513,172 +1645,114 @@ func (p TunnelServer_unregisterTunnel_Results_Promise) Struct() (TunnelServer_un
 	return TunnelServer_unregisterTunnel_Results{s}, err
 }
 
-type TunnelServer_connect_Params struct{ capnp.Struct }
+type TunnelServer_obsoleteDeclarativeTunnelConnect_Params struct{ capnp.Struct }
 
-// TunnelServer_connect_Params_TypeID is the unique identifier for the type TunnelServer_connect_Params.
-const TunnelServer_connect_Params_TypeID = 0xa766b24d4fe5da35
+// TunnelServer_obsoleteDeclarativeTunnelConnect_Params_TypeID is the unique identifier for the type TunnelServer_obsoleteDeclarativeTunnelConnect_Params.
+const TunnelServer_obsoleteDeclarativeTunnelConnect_Params_TypeID = 0xa766b24d4fe5da35
 
-func NewTunnelServer_connect_Params(s *capnp.Segment) (TunnelServer_connect_Params, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	return TunnelServer_connect_Params{st}, err
+func NewTunnelServer_obsoleteDeclarativeTunnelConnect_Params(s *capnp.Segment) (TunnelServer_obsoleteDeclarativeTunnelConnect_Params, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Params{st}, err
 }
 
-func NewRootTunnelServer_connect_Params(s *capnp.Segment) (TunnelServer_connect_Params, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	return TunnelServer_connect_Params{st}, err
+func NewRootTunnelServer_obsoleteDeclarativeTunnelConnect_Params(s *capnp.Segment) (TunnelServer_obsoleteDeclarativeTunnelConnect_Params, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Params{st}, err
 }
 
-func ReadRootTunnelServer_connect_Params(msg *capnp.Message) (TunnelServer_connect_Params, error) {
+func ReadRootTunnelServer_obsoleteDeclarativeTunnelConnect_Params(msg *capnp.Message) (TunnelServer_obsoleteDeclarativeTunnelConnect_Params, error) {
 	root, err := msg.RootPtr()
-	return TunnelServer_connect_Params{root.Struct()}, err
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Params{root.Struct()}, err
 }
 
-func (s TunnelServer_connect_Params) String() string {
+func (s TunnelServer_obsoleteDeclarativeTunnelConnect_Params) String() string {
 	str, _ := text.Marshal(0xa766b24d4fe5da35, s.Struct)
 	return str
 }
 
-func (s TunnelServer_connect_Params) Parameters() (CapnpConnectParameters, error) {
-	p, err := s.Struct.Ptr(0)
-	return CapnpConnectParameters{Struct: p.Struct()}, err
+// TunnelServer_obsoleteDeclarativeTunnelConnect_Params_List is a list of TunnelServer_obsoleteDeclarativeTunnelConnect_Params.
+type TunnelServer_obsoleteDeclarativeTunnelConnect_Params_List struct{ capnp.List }
+
+// NewTunnelServer_obsoleteDeclarativeTunnelConnect_Params creates a new list of TunnelServer_obsoleteDeclarativeTunnelConnect_Params.
+func NewTunnelServer_obsoleteDeclarativeTunnelConnect_Params_List(s *capnp.Segment, sz int32) (TunnelServer_obsoleteDeclarativeTunnelConnect_Params_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0}, sz)
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Params_List{l}, err
 }
 
-func (s TunnelServer_connect_Params) HasParameters() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
+func (s TunnelServer_obsoleteDeclarativeTunnelConnect_Params_List) At(i int) TunnelServer_obsoleteDeclarativeTunnelConnect_Params {
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Params{s.List.Struct(i)}
 }
 
-func (s TunnelServer_connect_Params) SetParameters(v CapnpConnectParameters) error {
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewParameters sets the parameters field to a newly
-// allocated CapnpConnectParameters struct, preferring placement in s's segment.
-func (s TunnelServer_connect_Params) NewParameters() (CapnpConnectParameters, error) {
-	ss, err := NewCapnpConnectParameters(s.Struct.Segment())
-	if err != nil {
-		return CapnpConnectParameters{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-// TunnelServer_connect_Params_List is a list of TunnelServer_connect_Params.
-type TunnelServer_connect_Params_List struct{ capnp.List }
-
-// NewTunnelServer_connect_Params creates a new list of TunnelServer_connect_Params.
-func NewTunnelServer_connect_Params_List(s *capnp.Segment, sz int32) (TunnelServer_connect_Params_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
-	return TunnelServer_connect_Params_List{l}, err
-}
-
-func (s TunnelServer_connect_Params_List) At(i int) TunnelServer_connect_Params {
-	return TunnelServer_connect_Params{s.List.Struct(i)}
-}
-
-func (s TunnelServer_connect_Params_List) Set(i int, v TunnelServer_connect_Params) error {
+func (s TunnelServer_obsoleteDeclarativeTunnelConnect_Params_List) Set(i int, v TunnelServer_obsoleteDeclarativeTunnelConnect_Params) error {
 	return s.List.SetStruct(i, v.Struct)
 }
 
-func (s TunnelServer_connect_Params_List) String() string {
+func (s TunnelServer_obsoleteDeclarativeTunnelConnect_Params_List) String() string {
 	str, _ := text.MarshalList(0xa766b24d4fe5da35, s.List)
 	return str
 }
 
-// TunnelServer_connect_Params_Promise is a wrapper for a TunnelServer_connect_Params promised by a client call.
-type TunnelServer_connect_Params_Promise struct{ *capnp.Pipeline }
+// TunnelServer_obsoleteDeclarativeTunnelConnect_Params_Promise is a wrapper for a TunnelServer_obsoleteDeclarativeTunnelConnect_Params promised by a client call.
+type TunnelServer_obsoleteDeclarativeTunnelConnect_Params_Promise struct{ *capnp.Pipeline }
 
-func (p TunnelServer_connect_Params_Promise) Struct() (TunnelServer_connect_Params, error) {
+func (p TunnelServer_obsoleteDeclarativeTunnelConnect_Params_Promise) Struct() (TunnelServer_obsoleteDeclarativeTunnelConnect_Params, error) {
 	s, err := p.Pipeline.Struct()
-	return TunnelServer_connect_Params{s}, err
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Params{s}, err
 }
 
-func (p TunnelServer_connect_Params_Promise) Parameters() CapnpConnectParameters_Promise {
-	return CapnpConnectParameters_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
+type TunnelServer_obsoleteDeclarativeTunnelConnect_Results struct{ capnp.Struct }
+
+// TunnelServer_obsoleteDeclarativeTunnelConnect_Results_TypeID is the unique identifier for the type TunnelServer_obsoleteDeclarativeTunnelConnect_Results.
+const TunnelServer_obsoleteDeclarativeTunnelConnect_Results_TypeID = 0xfeac5c8f4899ef7c
+
+func NewTunnelServer_obsoleteDeclarativeTunnelConnect_Results(s *capnp.Segment) (TunnelServer_obsoleteDeclarativeTunnelConnect_Results, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Results{st}, err
 }
 
-type TunnelServer_connect_Results struct{ capnp.Struct }
-
-// TunnelServer_connect_Results_TypeID is the unique identifier for the type TunnelServer_connect_Results.
-const TunnelServer_connect_Results_TypeID = 0xfeac5c8f4899ef7c
-
-func NewTunnelServer_connect_Results(s *capnp.Segment) (TunnelServer_connect_Results, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	return TunnelServer_connect_Results{st}, err
+func NewRootTunnelServer_obsoleteDeclarativeTunnelConnect_Results(s *capnp.Segment) (TunnelServer_obsoleteDeclarativeTunnelConnect_Results, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0})
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Results{st}, err
 }
 
-func NewRootTunnelServer_connect_Results(s *capnp.Segment) (TunnelServer_connect_Results, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	return TunnelServer_connect_Results{st}, err
-}
-
-func ReadRootTunnelServer_connect_Results(msg *capnp.Message) (TunnelServer_connect_Results, error) {
+func ReadRootTunnelServer_obsoleteDeclarativeTunnelConnect_Results(msg *capnp.Message) (TunnelServer_obsoleteDeclarativeTunnelConnect_Results, error) {
 	root, err := msg.RootPtr()
-	return TunnelServer_connect_Results{root.Struct()}, err
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Results{root.Struct()}, err
 }
 
-func (s TunnelServer_connect_Results) String() string {
+func (s TunnelServer_obsoleteDeclarativeTunnelConnect_Results) String() string {
 	str, _ := text.Marshal(0xfeac5c8f4899ef7c, s.Struct)
 	return str
 }
 
-func (s TunnelServer_connect_Results) Result() (ConnectResult, error) {
-	p, err := s.Struct.Ptr(0)
-	return ConnectResult{Struct: p.Struct()}, err
+// TunnelServer_obsoleteDeclarativeTunnelConnect_Results_List is a list of TunnelServer_obsoleteDeclarativeTunnelConnect_Results.
+type TunnelServer_obsoleteDeclarativeTunnelConnect_Results_List struct{ capnp.List }
+
+// NewTunnelServer_obsoleteDeclarativeTunnelConnect_Results creates a new list of TunnelServer_obsoleteDeclarativeTunnelConnect_Results.
+func NewTunnelServer_obsoleteDeclarativeTunnelConnect_Results_List(s *capnp.Segment, sz int32) (TunnelServer_obsoleteDeclarativeTunnelConnect_Results_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 0}, sz)
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Results_List{l}, err
 }
 
-func (s TunnelServer_connect_Results) HasResult() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
+func (s TunnelServer_obsoleteDeclarativeTunnelConnect_Results_List) At(i int) TunnelServer_obsoleteDeclarativeTunnelConnect_Results {
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Results{s.List.Struct(i)}
 }
 
-func (s TunnelServer_connect_Results) SetResult(v ConnectResult) error {
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewResult sets the result field to a newly
-// allocated ConnectResult struct, preferring placement in s's segment.
-func (s TunnelServer_connect_Results) NewResult() (ConnectResult, error) {
-	ss, err := NewConnectResult(s.Struct.Segment())
-	if err != nil {
-		return ConnectResult{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-// TunnelServer_connect_Results_List is a list of TunnelServer_connect_Results.
-type TunnelServer_connect_Results_List struct{ capnp.List }
-
-// NewTunnelServer_connect_Results creates a new list of TunnelServer_connect_Results.
-func NewTunnelServer_connect_Results_List(s *capnp.Segment, sz int32) (TunnelServer_connect_Results_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
-	return TunnelServer_connect_Results_List{l}, err
-}
-
-func (s TunnelServer_connect_Results_List) At(i int) TunnelServer_connect_Results {
-	return TunnelServer_connect_Results{s.List.Struct(i)}
-}
-
-func (s TunnelServer_connect_Results_List) Set(i int, v TunnelServer_connect_Results) error {
+func (s TunnelServer_obsoleteDeclarativeTunnelConnect_Results_List) Set(i int, v TunnelServer_obsoleteDeclarativeTunnelConnect_Results) error {
 	return s.List.SetStruct(i, v.Struct)
 }
 
-func (s TunnelServer_connect_Results_List) String() string {
+func (s TunnelServer_obsoleteDeclarativeTunnelConnect_Results_List) String() string {
 	str, _ := text.MarshalList(0xfeac5c8f4899ef7c, s.List)
 	return str
 }
 
-// TunnelServer_connect_Results_Promise is a wrapper for a TunnelServer_connect_Results promised by a client call.
-type TunnelServer_connect_Results_Promise struct{ *capnp.Pipeline }
+// TunnelServer_obsoleteDeclarativeTunnelConnect_Results_Promise is a wrapper for a TunnelServer_obsoleteDeclarativeTunnelConnect_Results promised by a client call.
+type TunnelServer_obsoleteDeclarativeTunnelConnect_Results_Promise struct{ *capnp.Pipeline }
 
-func (p TunnelServer_connect_Results_Promise) Struct() (TunnelServer_connect_Results, error) {
+func (p TunnelServer_obsoleteDeclarativeTunnelConnect_Results_Promise) Struct() (TunnelServer_obsoleteDeclarativeTunnelConnect_Results, error) {
 	s, err := p.Pipeline.Struct()
-	return TunnelServer_connect_Results{s}, err
-}
-
-func (p TunnelServer_connect_Results_Promise) Result() ConnectResult_Promise {
-	return ConnectResult_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
+	return TunnelServer_obsoleteDeclarativeTunnelConnect_Results{s}, err
 }
 
 type TunnelServer_authenticate_Params struct{ capnp.Struct }
@@ -3888,12 +1962,12 @@ type TunnelServer_reconnectTunnel_Params struct{ capnp.Struct }
 const TunnelServer_reconnectTunnel_Params_TypeID = 0xa353a3556df74984
 
 func NewTunnelServer_reconnectTunnel_Params(s *capnp.Segment) (TunnelServer_reconnectTunnel_Params, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 4})
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 5})
 	return TunnelServer_reconnectTunnel_Params{st}, err
 }
 
 func NewRootTunnelServer_reconnectTunnel_Params(s *capnp.Segment) (TunnelServer_reconnectTunnel_Params, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 4})
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 5})
 	return TunnelServer_reconnectTunnel_Params{st}, err
 }
 
@@ -3935,37 +2009,51 @@ func (s TunnelServer_reconnectTunnel_Params) SetEventDigest(v []byte) error {
 	return s.Struct.SetData(1, v)
 }
 
-func (s TunnelServer_reconnectTunnel_Params) Hostname() (string, error) {
+func (s TunnelServer_reconnectTunnel_Params) ConnDigest() ([]byte, error) {
 	p, err := s.Struct.Ptr(2)
+	return []byte(p.Data()), err
+}
+
+func (s TunnelServer_reconnectTunnel_Params) HasConnDigest() bool {
+	p, err := s.Struct.Ptr(2)
+	return p.IsValid() || err != nil
+}
+
+func (s TunnelServer_reconnectTunnel_Params) SetConnDigest(v []byte) error {
+	return s.Struct.SetData(2, v)
+}
+
+func (s TunnelServer_reconnectTunnel_Params) Hostname() (string, error) {
+	p, err := s.Struct.Ptr(3)
 	return p.Text(), err
 }
 
 func (s TunnelServer_reconnectTunnel_Params) HasHostname() bool {
-	p, err := s.Struct.Ptr(2)
+	p, err := s.Struct.Ptr(3)
 	return p.IsValid() || err != nil
 }
 
 func (s TunnelServer_reconnectTunnel_Params) HostnameBytes() ([]byte, error) {
-	p, err := s.Struct.Ptr(2)
+	p, err := s.Struct.Ptr(3)
 	return p.TextBytes(), err
 }
 
 func (s TunnelServer_reconnectTunnel_Params) SetHostname(v string) error {
-	return s.Struct.SetText(2, v)
+	return s.Struct.SetText(3, v)
 }
 
 func (s TunnelServer_reconnectTunnel_Params) Options() (RegistrationOptions, error) {
-	p, err := s.Struct.Ptr(3)
+	p, err := s.Struct.Ptr(4)
 	return RegistrationOptions{Struct: p.Struct()}, err
 }
 
 func (s TunnelServer_reconnectTunnel_Params) HasOptions() bool {
-	p, err := s.Struct.Ptr(3)
+	p, err := s.Struct.Ptr(4)
 	return p.IsValid() || err != nil
 }
 
 func (s TunnelServer_reconnectTunnel_Params) SetOptions(v RegistrationOptions) error {
-	return s.Struct.SetPtr(3, v.Struct.ToPtr())
+	return s.Struct.SetPtr(4, v.Struct.ToPtr())
 }
 
 // NewOptions sets the options field to a newly
@@ -3975,7 +2063,7 @@ func (s TunnelServer_reconnectTunnel_Params) NewOptions() (RegistrationOptions, 
 	if err != nil {
 		return RegistrationOptions{}, err
 	}
-	err = s.Struct.SetPtr(3, ss.Struct.ToPtr())
+	err = s.Struct.SetPtr(4, ss.Struct.ToPtr())
 	return ss, err
 }
 
@@ -3984,7 +2072,7 @@ type TunnelServer_reconnectTunnel_Params_List struct{ capnp.List }
 
 // NewTunnelServer_reconnectTunnel_Params creates a new list of TunnelServer_reconnectTunnel_Params.
 func NewTunnelServer_reconnectTunnel_Params_List(s *capnp.Segment, sz int32) (TunnelServer_reconnectTunnel_Params_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 4}, sz)
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 5}, sz)
 	return TunnelServer_reconnectTunnel_Params_List{l}, err
 }
 
@@ -4010,7 +2098,7 @@ func (p TunnelServer_reconnectTunnel_Params_Promise) Struct() (TunnelServer_reco
 }
 
 func (p TunnelServer_reconnectTunnel_Params_Promise) Options() RegistrationOptions_Promise {
-	return RegistrationOptions_Promise{Pipeline: p.Pipeline.GetPipeline(3)}
+	return RegistrationOptions_Promise{Pipeline: p.Pipeline.GetPipeline(4)}
 }
 
 type TunnelServer_reconnectTunnel_Results struct{ capnp.Struct }
@@ -4097,527 +2185,152 @@ func (p TunnelServer_reconnectTunnel_Results_Promise) Result() TunnelRegistratio
 	return TunnelRegistration_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
 }
 
-type ClientService struct{ Client capnp.Client }
-
-// ClientService_TypeID is the unique identifier for the type ClientService.
-const ClientService_TypeID = 0xf143a395ed8b3133
-
-func (c ClientService) UseConfiguration(ctx context.Context, params func(ClientService_useConfiguration_Params) error, opts ...capnp.CallOption) ClientService_useConfiguration_Results_Promise {
-	if c.Client == nil {
-		return ClientService_useConfiguration_Results_Promise{Pipeline: capnp.NewPipeline(capnp.ErrorAnswer(capnp.ErrNullClient))}
-	}
-	call := &capnp.Call{
-		Ctx: ctx,
-		Method: capnp.Method{
-			InterfaceID:   0xf143a395ed8b3133,
-			MethodID:      0,
-			InterfaceName: "tunnelrpc/tunnelrpc.capnp:ClientService",
-			MethodName:    "useConfiguration",
-		},
-		Options: capnp.NewCallOptions(opts),
-	}
-	if params != nil {
-		call.ParamsSize = capnp.ObjectSize{DataSize: 0, PointerCount: 1}
-		call.ParamsFunc = func(s capnp.Struct) error { return params(ClientService_useConfiguration_Params{Struct: s}) }
-	}
-	return ClientService_useConfiguration_Results_Promise{Pipeline: capnp.NewPipeline(c.Client.Call(call))}
-}
-
-type ClientService_Server interface {
-	UseConfiguration(ClientService_useConfiguration) error
-}
-
-func ClientService_ServerToClient(s ClientService_Server) ClientService {
-	c, _ := s.(server.Closer)
-	return ClientService{Client: server.New(ClientService_Methods(nil, s), c)}
-}
-
-func ClientService_Methods(methods []server.Method, s ClientService_Server) []server.Method {
-	if cap(methods) == 0 {
-		methods = make([]server.Method, 0, 1)
-	}
-
-	methods = append(methods, server.Method{
-		Method: capnp.Method{
-			InterfaceID:   0xf143a395ed8b3133,
-			MethodID:      0,
-			InterfaceName: "tunnelrpc/tunnelrpc.capnp:ClientService",
-			MethodName:    "useConfiguration",
-		},
-		Impl: func(c context.Context, opts capnp.CallOptions, p, r capnp.Struct) error {
-			call := ClientService_useConfiguration{c, opts, ClientService_useConfiguration_Params{Struct: p}, ClientService_useConfiguration_Results{Struct: r}}
-			return s.UseConfiguration(call)
-		},
-		ResultsSize: capnp.ObjectSize{DataSize: 0, PointerCount: 1},
-	})
-
-	return methods
-}
-
-// ClientService_useConfiguration holds the arguments for a server call to ClientService.useConfiguration.
-type ClientService_useConfiguration struct {
-	Ctx     context.Context
-	Options capnp.CallOptions
-	Params  ClientService_useConfiguration_Params
-	Results ClientService_useConfiguration_Results
-}
-
-type ClientService_useConfiguration_Params struct{ capnp.Struct }
-
-// ClientService_useConfiguration_Params_TypeID is the unique identifier for the type ClientService_useConfiguration_Params.
-const ClientService_useConfiguration_Params_TypeID = 0xb9d4ef45c2b5fc5b
-
-func NewClientService_useConfiguration_Params(s *capnp.Segment) (ClientService_useConfiguration_Params, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	return ClientService_useConfiguration_Params{st}, err
-}
-
-func NewRootClientService_useConfiguration_Params(s *capnp.Segment) (ClientService_useConfiguration_Params, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	return ClientService_useConfiguration_Params{st}, err
-}
-
-func ReadRootClientService_useConfiguration_Params(msg *capnp.Message) (ClientService_useConfiguration_Params, error) {
-	root, err := msg.RootPtr()
-	return ClientService_useConfiguration_Params{root.Struct()}, err
-}
-
-func (s ClientService_useConfiguration_Params) String() string {
-	str, _ := text.Marshal(0xb9d4ef45c2b5fc5b, s.Struct)
-	return str
-}
-
-func (s ClientService_useConfiguration_Params) ClientServiceConfig() (ClientConfig, error) {
-	p, err := s.Struct.Ptr(0)
-	return ClientConfig{Struct: p.Struct()}, err
-}
-
-func (s ClientService_useConfiguration_Params) HasClientServiceConfig() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s ClientService_useConfiguration_Params) SetClientServiceConfig(v ClientConfig) error {
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewClientServiceConfig sets the clientServiceConfig field to a newly
-// allocated ClientConfig struct, preferring placement in s's segment.
-func (s ClientService_useConfiguration_Params) NewClientServiceConfig() (ClientConfig, error) {
-	ss, err := NewClientConfig(s.Struct.Segment())
-	if err != nil {
-		return ClientConfig{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-// ClientService_useConfiguration_Params_List is a list of ClientService_useConfiguration_Params.
-type ClientService_useConfiguration_Params_List struct{ capnp.List }
-
-// NewClientService_useConfiguration_Params creates a new list of ClientService_useConfiguration_Params.
-func NewClientService_useConfiguration_Params_List(s *capnp.Segment, sz int32) (ClientService_useConfiguration_Params_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
-	return ClientService_useConfiguration_Params_List{l}, err
-}
-
-func (s ClientService_useConfiguration_Params_List) At(i int) ClientService_useConfiguration_Params {
-	return ClientService_useConfiguration_Params{s.List.Struct(i)}
-}
-
-func (s ClientService_useConfiguration_Params_List) Set(i int, v ClientService_useConfiguration_Params) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s ClientService_useConfiguration_Params_List) String() string {
-	str, _ := text.MarshalList(0xb9d4ef45c2b5fc5b, s.List)
-	return str
-}
-
-// ClientService_useConfiguration_Params_Promise is a wrapper for a ClientService_useConfiguration_Params promised by a client call.
-type ClientService_useConfiguration_Params_Promise struct{ *capnp.Pipeline }
-
-func (p ClientService_useConfiguration_Params_Promise) Struct() (ClientService_useConfiguration_Params, error) {
-	s, err := p.Pipeline.Struct()
-	return ClientService_useConfiguration_Params{s}, err
-}
-
-func (p ClientService_useConfiguration_Params_Promise) ClientServiceConfig() ClientConfig_Promise {
-	return ClientConfig_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
-type ClientService_useConfiguration_Results struct{ capnp.Struct }
-
-// ClientService_useConfiguration_Results_TypeID is the unique identifier for the type ClientService_useConfiguration_Results.
-const ClientService_useConfiguration_Results_TypeID = 0x91f7a001ca145b9d
-
-func NewClientService_useConfiguration_Results(s *capnp.Segment) (ClientService_useConfiguration_Results, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	return ClientService_useConfiguration_Results{st}, err
-}
-
-func NewRootClientService_useConfiguration_Results(s *capnp.Segment) (ClientService_useConfiguration_Results, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1})
-	return ClientService_useConfiguration_Results{st}, err
-}
-
-func ReadRootClientService_useConfiguration_Results(msg *capnp.Message) (ClientService_useConfiguration_Results, error) {
-	root, err := msg.RootPtr()
-	return ClientService_useConfiguration_Results{root.Struct()}, err
-}
-
-func (s ClientService_useConfiguration_Results) String() string {
-	str, _ := text.Marshal(0x91f7a001ca145b9d, s.Struct)
-	return str
-}
-
-func (s ClientService_useConfiguration_Results) Result() (UseConfigurationResult, error) {
-	p, err := s.Struct.Ptr(0)
-	return UseConfigurationResult{Struct: p.Struct()}, err
-}
-
-func (s ClientService_useConfiguration_Results) HasResult() bool {
-	p, err := s.Struct.Ptr(0)
-	return p.IsValid() || err != nil
-}
-
-func (s ClientService_useConfiguration_Results) SetResult(v UseConfigurationResult) error {
-	return s.Struct.SetPtr(0, v.Struct.ToPtr())
-}
-
-// NewResult sets the result field to a newly
-// allocated UseConfigurationResult struct, preferring placement in s's segment.
-func (s ClientService_useConfiguration_Results) NewResult() (UseConfigurationResult, error) {
-	ss, err := NewUseConfigurationResult(s.Struct.Segment())
-	if err != nil {
-		return UseConfigurationResult{}, err
-	}
-	err = s.Struct.SetPtr(0, ss.Struct.ToPtr())
-	return ss, err
-}
-
-// ClientService_useConfiguration_Results_List is a list of ClientService_useConfiguration_Results.
-type ClientService_useConfiguration_Results_List struct{ capnp.List }
-
-// NewClientService_useConfiguration_Results creates a new list of ClientService_useConfiguration_Results.
-func NewClientService_useConfiguration_Results_List(s *capnp.Segment, sz int32) (ClientService_useConfiguration_Results_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 0, PointerCount: 1}, sz)
-	return ClientService_useConfiguration_Results_List{l}, err
-}
-
-func (s ClientService_useConfiguration_Results_List) At(i int) ClientService_useConfiguration_Results {
-	return ClientService_useConfiguration_Results{s.List.Struct(i)}
-}
-
-func (s ClientService_useConfiguration_Results_List) Set(i int, v ClientService_useConfiguration_Results) error {
-	return s.List.SetStruct(i, v.Struct)
-}
-
-func (s ClientService_useConfiguration_Results_List) String() string {
-	str, _ := text.MarshalList(0x91f7a001ca145b9d, s.List)
-	return str
-}
-
-// ClientService_useConfiguration_Results_Promise is a wrapper for a ClientService_useConfiguration_Results promised by a client call.
-type ClientService_useConfiguration_Results_Promise struct{ *capnp.Pipeline }
-
-func (p ClientService_useConfiguration_Results_Promise) Struct() (ClientService_useConfiguration_Results, error) {
-	s, err := p.Pipeline.Struct()
-	return ClientService_useConfiguration_Results{s}, err
-}
-
-func (p ClientService_useConfiguration_Results_Promise) Result() UseConfigurationResult_Promise {
-	return UseConfigurationResult_Promise{Pipeline: p.Pipeline.GetPipeline(0)}
-}
-
-const schema_db8274f9144abc7e = "x\xda\xccZ}\x90\x14ez\x7f\x9e\xeeY\x9a\x85]" +
-	"f:=\x96+\x02#[\x12\x85\x13\xa2\"\x89\xb7I" +
-	"n\xf6\x03\xb8]\x8e\x8f\xe9\x9d\x05\xbd\x95K\xd1;\xf3" +
-	"\xeen/=\xddCw\x0f\xb0\x1b8\x84\xc2xl\xe4" +
-	"\x04OR\xe2\xe1\x95\xa0\xc4\x8fp9\xf0\xa0\xa2\x06-" +
-	"M\xee\"\xe6\x8ex\\ %\x17\xadS\xd1J\x9d\xa5" +
-	"eP)c\xca\xb3SO\x7f\xef\xec\xba\x80I\xaa\xee" +
-	"\x1f\x98z\xfay?\x9e\xaf\xdf\xf3\xf1\xee\x8dC\x93\x9a" +
-	"\xb9\x9bj\xaeK\x02\xc8\x87k&8l\xce/\x87\x1e" +
-	"\x9e\xf5\x8f\xdb@\x9e\x8a\xe8|\xfb\xf8\x92\xf4\xa7\xf6\xb6" +
-	"\x7f\x87\x1a^\x00\x98?(\x0c\xa1\xb4S\x10\x00\xa4\x1d" +
-	"\xc2\x7f\x00:5\xbf\x7f\xe6\x8d\xf2\x1b\xc2v\x10\xa7\xc6" +
-	"\x999b.M\\\x82\xd2\xd6\x89\xc4\xbcy\xe2\x06@" +
-	"\xe7OJ\xaf\x1c\xf8\xc3=?#f.b\x06\x9c\xff" +
-	"\xce\xc4!\x94>u9/L\\\x01\xe8|t\x7f\xc3" +
-	"\xdf\xec\xff\x97\x13w\x81x\x1d\x82\x7fv}\xed\xaf\x10" +
-	"P\x9aY\xfb#@\xe7_o\xdc\xf4\xf6\x9a\x8fv\x7f" +
-	"g\xe4\xb9\x09\xe2{\xb1v\x18\xa5\xb3\xb5\x02\xf0\xceC" +
-	"w\xa4\xff\x19\x1f\xfed7\x88\xd7\xd36H\x9f\x8f\xd5" +
-	"N\xe2\x00\xa5\x93\xb5Y@\xe7\x95\x1b\x8e?\xbb\xeb\xc7" +
-	"w\x7f\x1f\xe4\xeb\x10\xc1[\xff~\xed\x7f\xd398\x89" +
-	"\x18\xce?\xfa\x95\xc4\x0f_\xf9\xbd\x1f\xb8\x0c\xce\xc1S" +
-	"\xb7=\xb5\xeb\xc7\xd7\xbc\x0b+9\x01\x13\x00\xf3gO" +
-	"2\x89w\xc1$\xd2\xc5\xfd\xaf>\xb7\xbc\xb4\xfb\xc1\x03" +
-	"\xde\xa5\xdd\xbd\xae\x98\xccq\x90p\xb6w|RZ\xf9" +
-	"H\xfe\x11_\x1c\xf7S\xed\xe4\x0fi\xe9\xf4\xc9\xb4t" +
-	"\xc1\xaf\xdeY\xb1\xec\xa9\xde\xc7|\x06\xf7\xa2\x9fN~" +
-	"\x8a\x18j\xeb\xe8\x1e'6\xa4\xeei\xf9\xa3{\x1f\xab" +
-	"\xb6J\x0dq\xce\xad\x1bFiQ\x1d\xfdl\xa9\xbb\x0d" +
-	"\x01\x9d\xe1\xaf>\xb7\xea\xa3\xbf\xb0\x9e\x04y.&\x9c" +
-	"\x9f\xec8\xb7~\xf6\x13\xbd/\xb9\xd7\xe6\x01\xe6?S" +
-	"\xffK\xda\xfad=\xa9\xb2\xfe\xef\xe7,\xbf\xf7\xed\xa5" +
-	"Gh\xeb\x98Y\xbcK\x94\xa64\xa1\xb4y\x0aYf" +
-	"p\x0aq\xff\xe2\x86U\xcf?\x7f\xb8\xefH\xf5E\\" +
-	"\x8b_\x95\\\x82\xd2\xdc$q\xcfN\x12\xf7\x15\x1d\xf8" +
-	"\xda\x0b7%\xfe.n\xc7\xd7\x93\xef\xd2\xe1\xe7]\x86" +
-	";>;\xf6\x0f\x8b>8\xfdL\xdcB\xbbS\x1cY" +
-	"\xe8`\x8a\x04\xef\x1e\xc6\xd2kM\xcd\xcf\x83|=\xa2" +
-	"3\xb0g\x93\xdd\xfe\xc0N\x07V\xa2\x80\x1c\xc0\xfc\x93" +
-	"\xa9!\xda\xecl\x8a\xfck\xfa\xfb\xad\xf5\xfa\x07\xdb^" +
-	"\xa8rF\xf7\xd4\x05\xe2\x12\x94:D\xba\xda\"\xf1G" +
-	"\x80\x9f<y\xf7\xae\x8es\x0b_\x92\xa7b\xa2Z\xe8" +
-	"7\xc5!\x94.\x10\xef\xfc\xf3b\x86\xf4\x19j\xb0\x8a" +
-	"\xdd\x95z\xa64\x80\xd2\x02\x89~\xde$\xb9\xecK\xee" +
-	"\xf8\xde}5\xef|\xef\xa5j\x95R\xe0\xcc\xff\xd3\xb4" +
-	"\x89\x92\x9c\xa6\x9f\xcb\xd2\xbf\xe6\x00\x9d\xa9\x87\xff\xf8o" +
-	"[\x8bg\x7f6F\x10I\x9b\xaf\xfcP\xdaq%\xfd" +
-	"\xba\xebJ\x92\xf1\xdc\xdc#\x7f\xfe\x9b\x9d\xa7N\xc7=" +
-	"\xe5\xcd+]\x8f\xbdp%)\xec\xee\xaf\x0c\x0e-\x9f" +
-	"5|\xa6\xda@.\xe7\x15\x0d\xc3(\xcdmp\x0d\xd4" +
-	"@\xdbq\xef(W\xdd\xf9o_{-\xe6\xb3{\x1b" +
-	"\xdeBH8\xcbW\xdd1P\xbb\xf9\xdc\xb9\xf8A;" +
-	"\x1b\\\xd3\xedo\xa0\x83\x8e\x8a\xf7I\xc7\xf7\xff\xf5\xdb" +
-	"t\x90P\xad\xee\x17\x1b\xbaQ:C\x07\xcd?\xd5\xf0" +
-	"\x18\x09\x19\xc6\xceX\x8es\xf2\xea&\x94^\xbf\x9a\xee" +
-	"u\xf6j\xba\xd7\x825-l\xf5\xad\xb7\xbf\x0b\xe2T" +
-	"~\x04T\\5\xad\x09\xa5\xd9\xd3h\xd1\xaciw\xa3" +
-	"4w\xba\x00\xe0|\xb7\xaf\xfb\xe5\xf3m\xfb\xff\xb3z" +
-	"s/\x08\xa77\xa14k\xbak\xaa\xe9\xae}\xe6\xdf" +
-	"\xf4\x97\xef\xefy\xa4\xed\xfc\xa8\xddK3ZQ\xda<" +
-	"\xc3u\xf7\x19_\x97\x9e\x98\xe1n\xfe\xed\x85+\xbe\xda" +
-	"\xf8\xe2\x87qM\xec\x9e\xe1F\xef\xc1\x19\xa4\x89\xde[" +
-	"\xdf\xfb\xfa\xac\xef\xfe\xd3\x87U\xf6s\x19\x7f:c\x0e" +
-	"Jg\xdc\x1dO\x11\xf3\x07\x8b\x7fpzjr\xea\xc7" +
-	"c\xc5\xf1\x85\x19\x03(\xd5f\xe8gM\xe6^\xba\xe8" +
-	"\xedo=\xb8!\xfb\xfd\x8f?!\xb9\xf8*\x9c{\xe6" +
-	"\x9an\x94N^C;\xbf|\x0d\xc5\xd2\xd2Cg\xbf" +
-	"\xd6\xbf\xe7\xc4\xa7c\"we\xe66\x94v\xcct\x1d" +
-	"i&A\xce_\x09\xfb\xce\xdd\xf9\xeb?\xfb,.U" +
-	"\xa9\xf1-\x92jk#I\xb5\xe9\x83\xbd\xed\xf7\xae>" +
-	"\xf4y\x9ca\x7f\xe3\xb3\xc4p\xc4e\x08\x83q,O" +
-	";\xd5\xd8\x8a\xd2\x9b\x8dt\xde\xeb\x8dY\x98\xeb\xd8\x15" +
-	"]g\x9aYN\x14\xfe \xf8Y\x98WP\xcaz\xb9" +
-	"\xa9\xa5b\xf73\xddV\x0b\x8a\xcd:Y\xd6*\x1b\xba" +
-	"\xc5r\x88r\x8aO\x00$\x10@T\x06\x00\xe45<" +
-	"\xca\x1a\x87\"b\x9a\xd0ZT\x89\xd8\xcf\xa3ls(" +
-	"r\\\x9a\x10A\\\xd7\x08 k<\xca\x1b9D>" +
-	"Mx'V\xee\x03\x907\xf2(o\xe7\xd0)3\xb3" +
-	"\xa4\xe8L\x87\xa4\xbd\xc84\xb1\x0e8\xac\x03tLf" +
-	"\x9b\x83J\x8f\x06I\x16#\x0b\x03\x1bl\xac\x07\x0e\xeb" +
-	"\x01\x9d~\xa3bZ+u\x1bU\xad\x93\xf5\x9a\xcc\xc2" +
-	"~\x9c\x00\x1cN\x00\x1cO\xbc6C\xd7Y\xc1\xceW" +
-	"\x0a\x05fY\x00$\xd9\xc4P\xb2\xd9\x0f\x02\xc87\xf0" +
-	"(\xdf\x1a\x93l\x01Iv\x0b\x8fr3\x87\x8e\xc5\xcc" +
-	"\xf5\xcc\\j`A\xb1UC_\xae\xf0%\x16^\xbb" +
-	"\xa0\xa9L\xb7\xdb\x0cH\xea\xbdj\x1f\xa6\xa2P\x00\xc4" +
-	"\xd4\xf8\x17[\xb4Q\xb5lU\xef\xebr\xe9\xd9\x9c\xa1" +
-	"\xa9\x85A\xba]\x9d\xab\xc9\xe9M\xb4\x87xE7\x00" +
-	"r\xa2\xd8\x0a\x90U\xfbt\xc3dNQ\xb5\x0a$\x14" +
-	"\xf0\x05{K\x8f\xa2)z\x81\x85\x07M\x18}\x90w" +
-	"@\xde\x95c\x9e\x12\xb3\xf6\xb59\xc5T\xf8\x92%\xd7" +
-	"\x85\xfaX\xd4\x0d /\xe4Q\xce\xc5\xf4\xb1l\x09\x80" +
-	"\xbc\x94G\xf9\xf6\x98\xa5W\xb6\x02\xc89\x1e\xe5\xd5\x1c" +
-	":\x86\xa9\xf6\xa9z\x1b\x03\xde\x8c\x1b\xcc\xb2u\xa5\xc4" +
-	"\x00 P\xd8\x16\xa3LJ\xb40\x15\xa1t\x95\xa6j" +
-	"F\x0b\xd0\xce4\xcd\xb8\xcd0\xb5\xe2\x0a\xef\x1c\x83\xb4" +
-	"\xed\x9a2\\&\x8cay\xd78$\xb7Z`\xf3*" +
-	"\x16\xf3\xd6UL\xd7\x90\xd7v2\xab\xa2\xd9\x16\x80\x9c" +
-	"\x08\xc5\xafo\x02\x90'\xf2(\xa79\xcc\x9a.\x03\xa6" +
-	"\"P\xaf\xba\xea\xc5t]\xd1M\xd6\xa7Z63=" +
-	"\xf2\xb5YRx\xc9\x8a\x1fH\xfe\x97\xe2Q\x9e\xc6\xa1" +
-	"\xd3g*\x05\x96c&\xaaFq\xb9\xa2\x1by\x9e\x15" +
-	"\xb0\x068\xac\x19\xdf\x93\x16+\xaa\xc6\x8a\x9et\xf3\x0a" +
-	"\x19\xf7\x7f\x8a\xde:\xc7\xf1\xc2\xb7;\x0a\xdfz\xfc\xdc" +
-	"\xf1\xe3w(\x8a\xdfz\xee\xb7\xce\xe8\x00\xae\xe7?s" +
-	"\xfc\x10\xa6\x88\xb0y\x94\xef\xa4\x88\xa8\x94I\xa7\x16\xf0" +
-	"\x86\x89\xa9\x08%}\xed\xb0b\x1fiZ\x87,+\x90" +
-	"\xa21\x15d{\x8fA(\x1a\xfd\x98\x8aJ\x19\x7f\x99" +
-	"\xc9\xd63\xd3b9H\x9a\xc6\xc6ALEY\xbfJ" +
-	"\xebS.W\xeb\x81\xa1\xc3U\xe3\xaf7Y\xc1\x83\x0c" +
-	"\x7fy.\xe3\x19-\x06\x87\xa4\xa3\xd5<\xca\xfd\xb1 " +
-	"a=\x00r\x91G\xb9\x1c\x0b\x92\xd2\x92H\x9b\"\x1f" +
-	"\xe0!EN\x99Gy\x137\x12\xe1\xd8z\xa6\xdb\x0b" +
-	"\xd5>\x10\x98\xf5\xff\x10F#\xa4\xf4e\x0c\xa5\x8b\xb9" +
-	"$yK\x1d\x8fr\x03\xc15}e6\x056\x9d\x16" +
-	"\x16\xc2\x17?\xad\x8d\xfe\xf5\xc17\xe7\xefb\xfa\xf8\xdb" +
-	"\x10\x1e\xb6\x97\x0e{\x80G\xf9\xd1\x98*\xf7\x9b\x00\xf2" +
-	"\xc3<\xca\x878D_\x93O\x1c\x00\x90\x0f\xf1(?" +
-	"M\x9a\xe4<M\x1e\x9bCm\x13\x8f\xf2\xcf9\x14\x13" +
-	"|\x9a\xba\x02\xf1e\x0a\xa9\x9f\xf3(\xbf\xca\xa1X\x93" +
-	"Hc\x0d\x80x\x86\xacs\x9aG\xf9\x8d/B\xab\x82" +
-	"fT\x8a\xbd\x9a\x02\x19\x93\x15;\x16\x86t\xbdR\xca" +
-	"\x99l\xbd\x8aF\xc5j\xb1mV\x12\xca\xb6\x15$\x9e" +
-	"\xa4\xad\xf4Y8\x050\xc7#\xa6\xa2R\x12\x90\x88\xe1" +
-	"\x9eh\xb2\xe2*fZ*o\xe8a\xeePu\x9b\xe9" +
-	"\xf6R\x05\x84\x1e\xa6\x85\xd4q\xb0\xa5\xd3\x8f\x10\x8a\x0f" +
-	"?\xd8\x8d\x08\x0f\xb1\x8f`|\x9a\xe3\xf8J\\D\xba" +
-	"i\xe6Q^\xca\xe1t\xfc\x9c\xc8\xa4\xc7\x8eN\x00\xb9" +
-	"\x9dG\xb9\x8b\xc3\xe9\xdco\x89L\x9a\x94\xbb#4O" +
-	"\xf6\xdbv\x19SQ\x89\xe9\x1b{\x03\xeb\xb1\x8c\xc2Z" +
-	"\x06H\xa0\x18\xd6;\xfe\xd7~\x1f\xa4\x81\xd7\x8a\x98\x8a" +
-	"Z\xc4*O\xe1\xbf(Cg\xa9\x1e0L7\x01F" +
-	"\xe9\xe8\xe6H\x88\xc0;:\xba#\x09D\xae\xd9\x13K" +
-	"\xee\x89\xee\x9f)(\x15\x8b\x8d,-Zzm\xe0\x99" +
-	"\x19\xa2\xa9\xd5oT\xb4b'\x03\xc16\x07\x11\x81C" +
-	"\x1c\x1fc\x17\x1a\xed1\xc5{n<v\xda\x0c\xb3f" +
-	"w<k\xfa\xea_I\xea\xef\xf2P\xc2\xd1\x08\xa5\xf4" +
-	"v\x03x\xcb\x0e\xaf\xeb\x11s\x86\xeb\x9c\x02p(\x00" +
-	":\x95\xb2e\x9bL)\x01\x86\xdeF\xfcS.#\x19" +
-	"U\x81bNI\xbaq\xff\xbb\x94\xfa/?\x87{\xf9" +
-	"tD\x06?\x10K\xa8\x05\x7f5\xba\xcb\xdb\x0c]\xb8" +
-	"\xec*\xcdG0/\x87\xcc\xf3k\x02* \x83\xe4:" +
-	"\x9b\x92\xc1\xb5<\xca7\xc6\x93\xeb\\R\xd1\xf5<\xca" +
-	"\xb7p(0\x93\xf2d\xd8\xe9{\x87n\xb1\xbc\x8a\x14" +
-	"S\xd1\x18\xe7\xe2\xd7\x89\x15\xeb\xaa\xa1\x8fr\xc3\xc6(" +
-	"\\B\x13v\xdc\x1c\xb3k`\xc2e=\x91]\x85\xb5" +
-	"l0\xb0R\x86\x95\x145B#\xdf\xb8- |#" +
-	"\xe2\x19\xb7\xa8\xf5\x93\xbf\x97\xfa\xb3\x9e\xb5\xe8\x92\xe9\xf0" +
-	"\x92\x9b\x87\x01\xe4;y\x94\xef\x89]r\x07\xf5\x08\xf7" +
-	"\xf0(?\x10\xbb\xe4\x1eR\xe2.\x1e\xe5}\xb1\xec\xb9" +
-	"\x97\x0c\xbc\x8fG\xf9q\x0e1\xe1A\xfeA\x82\xfc\xc7" +
-	"y\x94\x8fr.`\xb7\xb7\xb4\x19:\xfa\x97\xb0\x00\xc2" +
-	">\xa1\x9f)\xa6\xdd\xc3\x14\xb4;t\x9b\x99\xeb\x15\xd4" +
-	"\x02H\xd8b\xab%fT\xec\x10\"J\xcaF\xb7\xb0" +
-	"\xc2b\xbb\xb7JPl\x0bk\x81\xc3Z\x8aH\x8b\x99" +
-	"m&+\"YC\xd1r\x0ao\xf7_\x8a\x82F\x82" +
-	"xr\x0c\xf5PY\xb6\x89G\xf9;\x04%\x18\x9b&" +
-	"\x89w\x0d\x00\xe7\"\x09\xc9\xbc\xae5^Zp^\x9a" +
-	"\x8b\xb7ZnB\x9c\x00 n%\xedl\xe7Q\xde\xc5" +
-	"\x05Wk7 \xebEh\xb5\xa9\xfdVf\x0b\xa1\xa6" +
-	"\xca\"y\xfdzAEC\xefr\x15\x85\x91\xa6\x0aF" +
-	"\xa9l\x92+\xab\x86.W\x14M\xe5\xed\xc1p\xe1\xb8" +
-	"\xba H\xf2ByE9\xe3\x1a\x8b\x94qK\xa0\x0c" +
-	"\xe9[\xb8\x04 \xbf\x1ay\xcc\xf7c\xe4.\x12\xc3V" +
-	"\x80\xfc\x1a\xa2k\x18y\x8c\xa4\xe2T\x80|\x91\xe8e" +
-	"\x0c;P\xa9\x84O\x02\xe4\xcbD\xde\x84Q\xa9 \x0d" +
-	"\xba\xdbo$\xfav\x8c\xaa\x05i+\xce\x01\xc8o\"" +
-	"\xfa\x03D\x9f\xc0\xb9\x9a\x94\xf6\xe0\x00@\xfe~\xa2?" +
-	"Lt\xa1&M\xed\xb6\xf4\x10\x9a\x00\xf9}D\x7f\x9c" +
-	"\xe8\x13\x1b\xd28\x11@:\xe8\xd2\x1f%\xfaa\xa2\xd7" +
-	"^\x95\xc6Z\x00\xe9\x87\xb8\x0d \x7f\x88\xe8O\x13}" +
-	"\x12\xa6q\x12\x80t\x0c\x1f\x04\xc8?M\xf4\x9f\x10}" +
-	"\xf2\x844N\x06\x90^t\xefs\x9c\xe8'\x88^\x97" +
-	"Hc\x1d\x80\xf4S<\x00\x90?A\xf4\xd3\x18\xe2]" +
-	"G1\x0e\xbb\xe4njTv\xf0\x86\x15\x9a\x9c\xf9\x1d" +
-	"(z9!g$\xa9\x05\xc5d4*\x06\xc4$\xa0" +
-	"S6\x0cm\xf9H8\xbfX\xe5\xe3\xbb\x0b$\x0d\xbd" +
-	"\xa3\x18\xc6\x9f\xe7dK\x0d\xc8\x14\x14\xad\xa3\x1c\xd5B" +
-	"VK\xc56*e\xc8\x14\x15\x9b\x15\xc3\x84lV\xf4" +
-	"\xc5\xa6Q\xeaBf\x96T]\xd1 \xfc2\x9e\xcf%" +
-	"+\x15\xb5\x18\xee=n\x01\x17\xba'W\xed\x9e\x99r" +
-	"S\x97\xd2W5-\x98\x13a}\x08]so\x8e\xa0" +
-	">\x19\x0f\xa9\xcczE\xab\xb0K\xa9\xec\xc6\xed?:" +
-	"\xb3^\xffr\xb165\x98m]\xbc4_Y\x95F" +
-	"\xbd\xe46j4\xd2\x1a\x09\x1b\xcaj\xfa\xe3\x92v." +
-	"J`\x81Iz\xfd6\x142\xb4w\xcc9\xc2\xe1\xa3" +
-	"\xef\x1c\x97\xaa\x89>f{\xbf:\xf4^\x83r\xbd\xa0" +
-	"\x94\xac/\xb9\xba\x93Y\xc9K\xd1b4N\xbcx2" +
-	"n\xef\xea\xcaE\x13\x09\xdeC\xf2\x1bC\xf0j\xc1N" +
-	"\x80|3E\xe7R\x0cu(u\xb8 \xd2N\xe4." +
-	"\x8cJXIv\xc1\"G\xf4\xd5\x1859\xd27\xdd" +
-	" \x8f00\xd1\xe2\x81\x17s\xb7\x0f\xb1N\xacA\x0f" +
-	"\xbcJ\xee\xfe\x1a\xd17\xc6\xc1\xab\x82\xc3#\xc0N\xe0" +
-	"=\xf0\xda\xea\x82\xcev\xa2\xefr\xc1+\xe1\x81\xd7N" +
-	"|\x0a \xbf\x8b\xe8\xfb\\\xf0\xaa\xf1\xc0k/>;" +
-	"\x02\xec&M\xf0\xc0\xeb\xa0\xcb\xff8\xd1\x8f\xba\xe0\xd5" +
-	"\xea\x81\xd7\x11\x17\xec\x0e\x13\xfd8\x81T\xc5\xd4\xf2\xb6" +
-	"\xa9\xea\x80}Ql\x14\xca\xdf`\xac\xdc\x02IM]" +
-	"\xcf\xc2\xc4RT\x15maE\xd1 \x93\xb7\x95\xc2\xda" +
-	"\xa8N\xd7\xacvE/Z\xd8\xaf\xace\x94\x8e\x84x" +
-	"\xe2\xb65k\x153\xd5^\xc0\xa8\xb2\x0f\x0b\x99d\xce" +
-	"0\xaa\xeb\x1b\xb7@d\xa6\x87p\xe1\xb7\x92\xb2\xb1\xa3" +
-	"\xa8\xb16\x0c\xca\x19^\x8f\xd2\xa1J_\x0c]G\xaf" +
-	"\xc6\xe8R3#\x8b\x87\xb2\xdf+\x04EHW\xb6\xaa" +
-	"\xba`\x1b\xcb\xac`\xb7\x19\xa8\xdb\xaa^a\xa36(" +
-	"\xf4W\xf4\xb5\xac\xb8\x08\xf5\x82QT\xf5>\x18\xd5\xa4" +
-	"\xf0_4\x08\x8aU]n4c\xec!M\x9c\xdd\x04" +
-	"\x9c\x0b]TC\x88MQ\xab\x9f-\xb8\xab\xb2&S" +
-	"\xacX\x97:\xcei\xfe\xe0\xd2\x0b2\xaf\xad\xaf\x01\x08" +
-	"_\x9d0\x98\xdc\x8bG\x86\x80\x13\x9f\x100z\xf0\xc0" +
-	"\xe0}C|\xc8\x04N\xdc# \x17\xbe\x06b\xf0\x92" +
-	"'\xee\x18\x06N\xbcK@>|\xa1\xc3`,.\x0e" +
-	"\xb6\x02'\x96\x04L\x84\xaf\x95\x18\xcc\xd4E\x85\xea\xa4" +
-	"o\x0aX\x13>\xfda\xf0p#.\xdb\x06\x9c\xb8H" +
-	"p\x82v\x08\xb2\x9e\x18\xcd\xe8\x04\x80\x01\x19\x172\x9a" +
-	"\xd1\x09FI\x18\xb4M\x00\xcd\xb8\xc5\x87\xe7ft\x82" +
-	"a*$\x0b\x8a\xcd\x9a\xa9\xd7\xf4>\xa2\x0f\xde\xd0\x8c" +
-	"\xf1!%\xffE\x0d\xce\xd8\x85rkT\xcc\x05\x00\xbc" +
-	"u8\xaa\xe5\xc2\xa6r\xe7\x93\xf1:\xd9\x9f\x8d\xec\xdd" +
-	"\xe6OV\x8e\xc6f#G\xa8x>\xca\xa3\xfc\x0b." +
-	"\xaa\x0c\x02\x9f\x0e\xe6zh\x98A\x97;\xcex\xcf\xf7" +
-	"|\xbf\x86\xad\x1e\xf29E\xa3\xdf\xadq\xd1\xdb\xca\x82" +
-	"(\x1d\xc4'\x7fSb\x93?\x0c\xfakaD\xf6\x88" +
-	"\xcf\x01\xa7\\\xa4Y\x8bw\x8bn:K\xb8.\x19\xbc" +
-	"sb\xf0$-\x8a\xe4Z\xf5\x82\x13t\x94\x18\xe4B" +
-	"\xa82\xd9e\xb6\xd5\x9d,\xf3\xbfI\xd6c8\x88w" +
-	"N\x92<\xd2\x13(\xdcw 6\xa7\xd3\x0c\xbf#L" +
-	".\x8f\x17\xf5\xe3\xe8\xca\xbbpP\x82'i1\xed?" +
-	"-\xdc\xffX\xa3?\\;\x1e+v\x9ei\xf4\x1d\xe8" +
-	"\x85X\x9f\xf6\xdc\x12\x00\xf9\xb87q\x0b\x1e}\xce\x90" +
-	"\xa3\xbe\xca\xa3\xfcv\xcc\xfd\xde$\xc67x\x94\xdf\x8b" +
-	"\xf2\x95\xf8\x1b\xeaY\xde\xe3Q\xfe/JV\x09\xafg" +
-	"\xb9@\xfd\xe9\xc7<v\xa2\xdf?\x07/B\x153B" +
-	"o\xcd\xe8[\xaa\xea\xcc\xa2\xb2\xb4j*\x12<3\xa1" +
-	"M\x98X1\x09\xd8G\x02h\xc7\xc2X5\x1b\x0e\x89" +
-	"\x90\x99y\x8a\xe1\"Z\xe1\xf0e\xec\xb1\xec8\xaa\xcd" +
-	"\xfb\x81\xe4\xc5\x91_\x17\xc4\xba\xf4\x03\xb1\x01V\xa0X" +
-	"\xf9Y\x7f0\xb4&\xa6\xd8o\xf5D\x83f\x02\x1bc" +
-	"e\xb9\xa8\xa0\xcd\x16\x9bl]\x85\x09za0\xeaV" +
-	"\xa9_+X+\xb1L\x15\xf4b\x93e\xd7UX\x9c" +
-	"!x\\\x00A5\x8a\xa3^\x15\xc6\xa8\x12oc=" +
-	"y\xa3\xb0\x96\xd9#\x1e]\xaa\x1e\x06;\xa3\x97\x85\xf0" +
-	"]\xb03\xfe.\xe8C\xd4\xba\x81h\xe6\x1dB\xd4\xe0" +
-	"p\xd4\xea\x8e]\x16\xfc\xdfd\xf2/\xf56FE\xb1" +
-	"p)\x05c\xf8';_r\x02\x7f\xa9\xf5}\xf4\xe2" +
-	"{\x99S+\x08q\x03c\x7f\xd1A\x87p\xfe\xe6\xff" +
-	"\x13\x00\x00\xff\xff<\x08\xe4z"
+const schema_db8274f9144abc7e = "x\xda\xccX}\x8c\x14g\x19\x7f~\xf3\xee\xee\xdcq" +
+	"\xbb\xecMf\x89pis\x86\xd0\xd4\x12[\x8b'\x86" +
+	"\xe2\xc7\xdd\xd1\x03=\xe4c\xe7\x16LK\xa9\xe9\xdc\xde" +
+	"{\xc7\x9c\xbb3\xdb\x99\xd9+\x87\xa5\x85\x0b\xa4\xa5\xc1" +
+	"\xdaR0\x05[\x834\xc6T\x8d\x16?\xa254\xa1" +
+	"\xd1\xd8\x9a6V\x0c\x1a\xa84j)ilJP\xc4" +
+	"\x98\x9a\xea\x98gvgv8Z\x0a\xe5\x9f\xfe\xb7\xf7" +
+	"\x9b\xe7}\xbe\xdf\xe7\xf7\xbcw\xe3\x89T\x9f\xb2 \xfd" +
+	"z\x86\xc8(\xa63\x81\x9c\xff\xfbM\xfb\xaf\xf9\xe5\x14" +
+	"\x19]@p\xcf\xa1\xe5\x85\xb7\xfc\xa9?QZ\xa8D" +
+	"=\xb7\x8aM\xd0\xab\xfcS\xb7\xc4\xeb\x84\xe0\xd3\xd5\x97" +
+	"\x0e|r\xcf\x0b\xdbH\xebRZ\xc2\x84\x9e\x95\xa9M" +
+	"\xd0\xcd\x14K\xde\x9eZM\x08\xfe\xb9{\xf6\xf7\xbe\xf5" +
+	"\xdb\xe7\xb7\x93v-\xa8\xa9\xae\x9ez\x19\x04}G\xea" +
+	"\x87\x84\xe0\xa5\x8f\x1e\xfa\xc5C?\xbe\xef\x1bd\\\x0b" +
+	"\x10\xf1\xd1\x9e\xeb\xd2\xffa\x81\xcf\xa4{\x09\xc1\xeec" +
+	"\xcf\xac\xaa>\xbc\xef@CC\xf8]\xa6\x15\x85R\xc1" +
+	"\xb6\xc1\x7fW\xd7>Qz\xa2\xa9;\x1d\xba\x9a>\x0b" +
+	"BO5\xdd\x0dB\xb0\xf0\xe5S\xabW\xfeh\xf4;" +
+	"\x89\xb3;2\x9b\xf8\xec\xacA\x9c8\xbc \xf5\xb3\xa4" +
+	"_\xdb3o\xb0\xd9\xbd\x19\xf6\xeb\xea\xd3Kr\xf6\x99" +
+	"\xa9\xc3\xa4u]\x90\x8f\x9b\xd4\xe5\xd0W\xaa\x1c\xe5\xa0" +
+	"\xca\xc2\xcbo{dW\xfa\xd4#\xcfq\xf6\x12\x09I" +
+	"\xb7\xb1\xf4)\xd5\x85\xfe\x16K\xf7\xfcK\xfd\x90 \x04" +
+	"]O}\xea\x07KF\x8e\xbf0M\xb7\xc2\x0a\xeb\x1d" +
+	"g\xf5\xad\x1d\xfcks\xc7]\x84\xe0\xe4\xf5\x07\xbf\xf2" +
+	"\xb7\xaf\x1e9\xdat\x14\xac\xe6xG\x98\x9f\xd3\x1d\x9c" +
+	"\x1f\xe5\x949g\xcb\x1f?{\"\x11c.\xfb*(" +
+	"\x15\xac\xfa\xe2m\xe3\xed\x9bO\x9eL\x1eE6\x8cq" +
+	"V\x96\x8f.\xbc\xa3_\xae_t\xcb\x1b\xa4u\x89\xf3" +
+	"\xca\xb80\xbb\x18\xfa\xd2,\x1f\xe8\xcf\xde\x07\xfd\xd6\x9c" +
+	"J\x14<x\xcf\xc0\xea\x9b\xe6>{6\xa9\xaf?\xc7" +
+	"\xf9\xd6\xd7\xe6X\xdf\xe8\xa27?w\xcd\x83\xbf>;" +
+	"-\xaeP\xb0\x9e\x9b\x0f};\xeb\xd1\xb7\xb2\xf0\x99e" +
+	"\xdf<\xda\x95\xef:7\xad\xdf2,\xfb\xed\xdc8\xf4" +
+	"\xa7Y\xb6\xe7\xa7\xb9\xe7\xb8\x90_W\x1f;\xb9\xe5\xcf" +
+	"_z;i\xfa\xc9\xfc\xabl\xfa\x99<\x9b\xbe\xfb\xcc" +
+	"\xde\xcf\x7fm\xfd\xf7\xff\x97\xc8\xc2+\xf9)\xae\xb4_" +
+	"\xb7mYqk\xa9\xf2\xc7\xa2\x9f\xe5\x1b\xcaf\xcd\xae" +
+	"-\xee\xaf\xfb\x1b\xa4\xed[e\xd3\x97C\xb2\xd7\xab9" +
+	"\xb6'\x8b\x80\xd1)RD)\x10i\xe68\x91q\x87" +
+	"\x80QQ\xa0\x01\x05\xeeQ\xcdbp\x83\x80\xe1+\xd0" +
+	"\x14\xa5\x00\x85H\xbbs.\x91Q\x1106*\x80(" +
+	"@\x10i\xf5]D\xc6F\x01c\x9b\x82\xa0&\xdd\xaa" +
+	"iK\x9b\xf2\xfeR\xd7E\x96\x14d\x09\x81+}w" +
+	"\xd2\x1c\xaeP^&`u\xfc.\x1f9R\x90#\x04" +
+	"\x1b\x9c\xba\xeb\xad\xb5}X\x95!9\xeaJ\x0f\x1b\x90" +
+	"!\x05\x19\xc2\xc5\xc2[\xba\xd1\xf2|\xcb\x1e[\x13\xe2" +
+	"\xbdE\xa7b\x95'9\xbcl\xe8\xf0\xd5\x8b\x89\x00m" +
+	"\xd6:\"(\x9a\xb6\x84\xa8\xd7\x1a\xb3\x1dW\x06#\x96" +
+	"Wvl[\x92(\xfb\xf7\x0e\x9b\x15\xd3.\xcb\xd8P" +
+	"\xe6BC\x0d\x03%\xe9NH\xf7\x063\x91\xd4yE" +
+	"\xd35E\xd53\xb2qB\x97\xae#2\x06\x04\x8cb" +
+	"\"\xa1+\x97\x13\x19+\x04\x8c[\x12\x09]\xbb\x84g" +
+	"\x93\x80\xb1^A\xe0\xb8\xd6\x98e\xdf,I\xb8\xc9\xbc" +
+	"x\xbemV%\x11Ey\xbb\xd7\xa9\xf9\x96c{\xe8" +
+	"l]J\x02:\x13\x99z\xaf\x00\xea\xb6+\xc7,\xcf" +
+	"\x97n\x03\x9e\xd7\xcbQT=#\x15\x07\x91\xdbGd" +
+	"t\x0a\x18W)\x08\xc6\\\xb3,\x8b\xd2\x85\xe5\x8c\xac" +
+	"2m\xa7$d\x19iR\x90N\x18\x9dy\xb9F\x87" +
+	"\xa4W\xaf\xf8\x1e\xc5\xa7.~\xde\x95a\xc5\xca~\xf3" +
+	"x\xb1\xbb\xe1s!\xf6y\xf3\xdcV/\xc6\x89\xdf:" +
+	"Ldl\x110v&\x12\xbf\x83Kt\xbf\x80\xb1[" +
+	"\x81&\x9a\xad\xfc0\x97\xe8!\x01\xe31\x05Z*U" +
+	"@\x8aH\xdb\xcb%\xda-`\xecW\xce\xefX9!" +
+	"m\x7f\xc0\x1a#Uz-\x94]\x1c\xb0\xc6$\x09\xef" +
+	"J\x8b\xd8\xf6\x1e\xf9p\x86=\xa7\"}9 \xcb\x15" +
+	"\xd35}kB6\xbe\xdf\xdcHST\xd4K\xee\x8a" +
+	"i\xe5)\x9a\xf90\xbf\x1f\xa4\xc6\xbe\xf8\x84\xb3\x1c\x9b" +
+	"(\xbc\xfd-\x97\xb9%\xfa\x04\x8c\x15\x09\x97\x07?\x9e" +
+	"\x88#ry\xe5p+\x0e\xf5\xcbr2\xf2\xaa[V" +
+	"M\xab\x12\xcf\xb2f0\xfd\xa4~\xa1%s1\xff\x86" +
+	"\xc2\xac\xba\xa1w\xabk\xdda\x84\xec\xe3\xa2\xc8G}" +
+	"\x12\xcb\x89J\x1b!P\xda\x86\x96\x9b\xfaV,!*" +
+	"\xdd\xcd\xf8\xfdhy\xaaoG\x17Qi\x0b\xe3;\x11" +
+	"Ob}\x07\xbeKT\xda\xc9\xf0\xa3,\x9e\x12a\x07" +
+	"\xeb{B\xf5\xbb\x19\xdf\xcfx:U@\x9aH\x7f\x1c" +
+	"\xf3\x89J\x8f2\xfe\x13\xc63J\x01\x19\"\xfd \xc6" +
+	"\x89JO1~\x88q5]`2\xd2\x9f\x86KT" +
+	"\xfa9\xe3\xbfb\xbcmv\x01mD\xfa\xb3!~\x98" +
+	"\xf1\x17\x19o\x9fS@;\x91\xfe\x1bL\x11\x95\x9eg" +
+	"\xfc(\xe33P\xc0\x0c\"\xfd\x08\xf6\x11\x95\x8e2\xfe" +
+	"\x17\xc6;2\x05t\x10\xe9\xaf\x84\xfe\x1cc\xfc5\xc6" +
+	"\xb3\xa9\x02\xb2D\xfa_q\x80\xa8\xf4\x1a\xe3\x7fg<" +
+	"\xa7\x16\x90#\xd2O\x87q\xbd\xc9x\x9b\xa2 (W" +
+	",i\xfb\x83#\xc9\x8e\x9a\x90\xaeg9v\xf4\xb7p" +
+	"\xbc\xb8d\xb2I\x1dh\xb4{\xd1\xc93w \xdf\xda" +
+	"\xfc\x08\xc8\x13\x82\x9a\xe3TV\x9d\xdf\xa9y\xdf\x1c\xf3" +
+	"0\x93P\x14@gk\xd9!0\x184\xe7\x94Ey" +
+	"\xc7\x1e\x1c\x89y\xac\xd1:+\x1c\xea.\x9b\x95\xc1Z" +
+	"\xec\x89\xe5\xf5\xd7}\xa7^\xa3\xee\x11\xd3\x97#\x00)" +
+	"\xe0\x8d\xc0\xad\xdb\xcb\\\xa7\xba\x06\xd2\xadZ\xb6Y\xa1" +
+	"\xf8K\xd9\xa9\xd6\\\xe9y\xb0\x1c\xdb\xa8\x9b\x15K\xf8" +
+	"\x93h'\x05\xed\x84|\xbdn\x8d\xc4\xba\xedz\xb5\xe8" +
+	"\xca\x09\x0bN\xdd\xeb\xf7}YUk\xbe\x17{4*" +
+	"M\xbf\xeeJ\x8fCkF\xc3\x07g&:Z\x99\xde" +
+	"\xd1\xdd\xb5\xc5k\xcc1\xee\xe0\xb6\xf8\x96]7\x9f\xc8" +
+	"\x98'`\xdc\x98\xb8e\xd7\xf3-\xfb\x88\x80\xf1\x09\x05" +
+	"y\xbe\xea\xf1\x8d\x9a0+uy\xc1\xdd\xc9\\\xe6\xfc" +
+	"\x1f\xeam\xf0G\x92\xb4\x16\x13\x19m\x02FAA\xaf" +
+	"\x1b~Fg\xb4\x86]&G\x8eI\xbf\xf1k\xd0\x1e" +
+	"u\x98\xe5\xd5\xcb\x99\xa5\xe7\x9f\x1e\x92^\xfeR\\m" +
+	"\xad\x97\xd3\x9c\x15\xeff\xae\xb7a\x85\xcb1[\xa4\x89" +
+	"\xe2\xad\x1f\xd1*\xab\x1d\xdcD\x8a\xf6\xa4\x8a\xd6\x1e\x8d" +
+	"hm\xd6\x1ewI\xd1\xf6\xa8P\xe2G\x0a\xa2\xc7\x88" +
+	"\xb6\xe3\x01R\xb4\xed*D\xfc\xc6@\xb4\x82.\x98\x9c" +
+	"\x01R\xb4\xcd*R\xf1\xf3\x07\xd1\x02\xab\xdd9N\x8a" +
+	"f\xa9H\xc7\xcf\x17D+\xbev\xfb\x14)\xdaZ5" +
+	"\x88\xb8\x86z\x1bq\xf4!\x88RF\xdda\xd2\xfa\x10" +
+	"D\x1b\x03\"N\"\xeaC\x10\xf1\x9ex7\xe2\x0b\xa5" +
+	"\xa2\x1d\x8d\xf2\xbc\xa5\xf5\xf1\x12\xdah\x1f4\xfb\x87\xfa" +
+	"P\x04\xde/9\x0e\xc9\xee+i\xbew\xa8g\xc3N" +
+	"\x9eC\xe7j&\xf4\xf2*\x9e\x150f+\x08*N" +
+	"\x93\xe7\xf2\xab\x127\xeab\xfc\xd3p8b\xa1<\x1f" +
+	"f\xfd\x1f\x8e\xf5\x1fa\x8a|Q\xc08\x96\xb8\xbc\x7f" +
+	"`\xf0w\x02\xc6\x89\x04E\x1eg\xaa?&`\x9ck" +
+	"\xed\xff\xffx\x80\xc88'0\x94\xa0\x1c\xed\xbf,\xf8" +
+	"6\x0f\xe6\x90p\xd0 \x9c4v\x11\x95\xdax`\x17" +
+	"B\xc2I5\x08G\xc30Q\xa9\x93\xf1\xab\x92\x843" +
+	"\x07\xeb\x88J\xb3\x19\x9f\x07\x05\xaaL\xbc\x1d\xean\x8b" +
+	"\x92+\xce\xd8\x0a\xcb~\xc7)\x16=H\xe0/3\xad" +
+	"J\xdd\x95\xd4\x1a\xa2\x8dD\x0d\x0e$\xe6z\xe3\xa5\xd2" +
+	"?\xca\x1dW\xe2~\x19\x81\x07\x95\x14\xa8\x97\xb7\xf0\xbd" +
+	"\xaf\x87\x04\xaf\xc3\xea\xa5\x0c\x89\xf8\x1f\x19\xd3\x9a\xaa\xfd" +
+	"J\x17\xc6h!\xff\x7f\x00\x00\x00\xff\xff/\xf3\xa2\xe2"
 
 func init() {
 	schemas.Register(schema_db8274f9144abc7e,
 		0x82c325a07ad22a65,
-		0x8407e070e0d52605,
 		0x84cb9536a2cf6d3c,
 		0x85c8cea1ab1894f3,
-		0x8891f360e47c30d3,
-		0x91f7a001ca145b9d,
 		0x9b87b390babc2ccf,
-		0x9e12cfad042ba4f1,
 		0xa29a916d4ebdd894,
 		0xa353a3556df74984,
 		0xa766b24d4fe5da35,
-		0xa78f37418c1077c8,
-		0xaa7386f356bd398a,
-		0xb14ce48f4e2abb0d,
-		0xb167b0bebe562cd0,
 		0xb70431c0dc014915,
-		0xb9d4ef45c2b5fc5b,
-		0xbe403adc6d018a5a,
 		0xc082ef6e0d42ed1d,
-		0xc744e349009087aa,
-		0xc766a92976e389c4,
 		0xc793e50592935b4a,
 		0xcbd96442ae3bb01a,
 		0xd4d18de97bb12de3,
-		0xd58a254e7a792b87,
 		0xdc3ed6801961e502,
 		0xe3e37d096a5b564e,
-		0xe4a6a1bc139211b4,
-		0xea20b390b257d1a5,
 		0xea58385c65416035,
-		0xf0a143f1c95a678e,
-		0xf143a395ed8b3133,
 		0xf2c122394f447e8e,
 		0xf2c68e2547ec3866,
 		0xf41a0f001ad49e46,
-		0xf7f49b3f779ae258,
-		0xf9c895683ed9ac4c,
 		0xfc5edf80e39c0796,
-		0xfeac5c8f4899ef7c,
-		0xff8d9848747c956a)
+		0xfeac5c8f4899ef7c)
 }

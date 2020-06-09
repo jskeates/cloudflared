@@ -2,17 +2,19 @@ package token
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/cloudflare/cloudflared/cmd/cloudflared/config"
 	"github.com/cloudflare/cloudflared/cmd/cloudflared/path"
 	"github.com/cloudflare/cloudflared/cmd/cloudflared/transfer"
-	"github.com/cloudflare/cloudflared/log"
+	"github.com/cloudflare/cloudflared/logger"
 	"github.com/cloudflare/cloudflared/origin"
 	"github.com/coreos/go-oidc/jose"
 )
@@ -20,8 +22,6 @@ import (
 const (
 	keyName = "token"
 )
-
-var logger = log.CreateLogger()
 
 type lock struct {
 	lockFilePath string
@@ -32,6 +32,21 @@ type lock struct {
 type signalHandler struct {
 	sigChannel chan os.Signal
 	signals    []os.Signal
+}
+
+type jwtPayload struct {
+	Aud   []string `json:"aud"`
+	Email string   `json:"email"`
+	Exp   int      `json:"exp"`
+	Iat   int      `json:"iat"`
+	Nbf   int      `json:"nbf"`
+	Iss   string   `json:"iss"`
+	Type  string   `json:"type"`
+	Subt  string   `json:"sub"`
+}
+
+func (p jwtPayload) isExpired() bool {
+	return int(time.Now().Unix()) > p.Exp
 }
 
 func (s *signalHandler) register(handler func()) {
@@ -113,7 +128,7 @@ func isTokenLocked(lockFilePath string) bool {
 }
 
 // FetchToken will either load a stored token or generate a new one
-func FetchToken(appURL *url.URL) (string, error) {
+func FetchToken(appURL *url.URL, logger logger.Service) (string, error) {
 	if token, err := GetTokenIfExists(appURL); token != "" && err == nil {
 		return token, nil
 	}
@@ -139,7 +154,7 @@ func FetchToken(appURL *url.URL) (string, error) {
 	// this weird parameter is the resource name (token) and the key/value
 	// we want to send to the transfer service. the key is token and the value
 	// is blank (basically just the id generated in the transfer service)
-	token, err := transfer.Run(appURL, keyName, keyName, "", path, true)
+	token, err := transfer.Run(appURL, keyName, keyName, "", path, true, logger)
 	if err != nil {
 		return "", err
 	}
@@ -147,7 +162,7 @@ func FetchToken(appURL *url.URL) (string, error) {
 	return string(token), nil
 }
 
-// GetTokenIfExists will return the token from local storage if it exists
+// GetTokenIfExists will return the token from local storage if it exists and not expired
 func GetTokenIfExists(url *url.URL) (string, error) {
 	path, err := path.GenerateFilePathFromURL(url, keyName)
 	if err != nil {
@@ -159,6 +174,17 @@ func GetTokenIfExists(url *url.URL) (string, error) {
 	}
 	token, err := jose.ParseJWT(string(content))
 	if err != nil {
+		return "", err
+	}
+
+	var payload jwtPayload
+	err = json.Unmarshal(token.Payload, &payload)
+	if err != nil {
+		return "", err
+	}
+
+	if payload.isExpired() {
+		err := os.Remove(path)
 		return "", err
 	}
 
